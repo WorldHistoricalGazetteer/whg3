@@ -969,13 +969,14 @@ BETA_STATUS_SECTIONS = [
                      "before their records become fully filterable by type. Coverage is growing steadily."},
             {"name": "Platform foundations", "stage": "dev", "staff": True,
              "body": "Nothing here is visible to users; it is what keeps everything else possible. Over "
-                     "the summer WHG's software dependencies were brought up to date — 161 outstanding "
-                     "security advisories cleared to none, and Django moved to its long-term-support "
-                     "release. Then the operating system underneath the servers was moved to a current "
+                     "the summer WHG's software dependencies were brought up to date — the JavaScript audit "
+                     "went from 71 vulnerabilities to none, and the Python one from 16 vulnerable "
+                     "packages to none — and Django moved to its long-term-support release. Then the "
+                     "operating system underneath the servers was moved to a current "
                      "Debian release: the old one had stopped supplying the packages its own catalogue "
                      "still advertised, so the server image could not be rebuilt at all, and no security "
-                     "update or new dependency could have reached the site. The move is made; the servers "
-                     "take it as the rebuilt image rolls out."},
+                     "update or new dependency could have reached the site. That is done: both the public "
+                     "site and the development server now run the rebuilt image."},
         ],
     },
     {
