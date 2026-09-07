@@ -216,6 +216,10 @@ print("RESOURCES_FORM_MULTIPLE", all("multiple" in str(f[n]) for n in ["files","
       # reports every known failure as a new regression. Assert the presence of
       # a result line, not merely the absence of failures.
       RANLINE=$(echo "$SUITE_RAW" | grep -Eo '^Ran [0-9]+ tests?' | tail -1)
+      # Which branch the container is ACTUALLY running. The repo is bind-mounted
+      # at /app, and deploy.sh resets in place, so HEAD stays on the branch name.
+      DEPLOYED_BRANCH=$($RUN "docker exec $CONTAINER git -C /app rev-parse --abbrev-ref HEAD" 2>/dev/null | tr -d '\r' | tail -1)
+      DEPLOYED_COMMIT=$($RUN "docker exec $CONTAINER git -C /app rev-parse --short HEAD" 2>/dev/null | tr -d '\r' | tail -1)
       if [ -z "$RANLINE" ]; then
         # Name the cause where we can. Two have bitten so far and they look
         # identical from the id set alone: 137 is the container going away under
@@ -237,27 +241,62 @@ print("RESOURCES_FORM_MULTIPLE", all("multiple" in str(f[n]) for n in ["files","
         if [ "$COUNT" -eq 0 ] && ! echo "$SUITE_RAW" | grep -qE '^OK( |$)'; then
           bad "refusing to write an empty baseline: $RANLINE but no OK — the run did not finish cleanly"
         else
-          printf '%s\n' "$CURRENT" > "$SUITE_BASELINE"
-          ok "wrote $COUNT failing-test id(s) to $SUITE_BASELINE ($RANLINE)"
+          # A baseline with no provenance is a claim you cannot check: 40 bare
+          # test ids say nothing about which code produced them, so the file is
+          # equally plausible-looking on any branch and equally wrong on all but
+          # one. The header is what lets the comparison below refuse.
+          {
+            echo "# WHG failing-test baseline — DO NOT hand-edit; regenerate with --write-baseline."
+            echo "#"
+            echo "# These ids are the tests already failing on ONE branch at ONE commit. They are"
+            echo "# meaningless against any other, so smoke_test.sh refuses to compare across"
+            echo "# branches rather than reporting a different failing set as regressions."
+            echo "#"
+            echo "# baseline-branch: ${DEPLOYED_BRANCH:-unknown}"
+            echo "# baseline-commit: ${DEPLOYED_COMMIT:-unknown}"
+            echo "# baseline-target: $TARGET"
+            echo "# baseline-date:   $(date -u +%Y-%m-%dT%H:%MZ)"
+            echo "# baseline-$RANLINE"
+            echo "#"
+            printf '%s\n' "$CURRENT"
+          } > "$SUITE_BASELINE"
+          ok "wrote $COUNT failing-test id(s) to $SUITE_BASELINE"
+          echo "    measured on ${DEPLOYED_BRANCH:-unknown}@${DEPLOYED_COMMIT:-unknown} ($RANLINE)"
         fi
       elif [ ! -f "$SUITE_BASELINE" ]; then
         # Never pass by default. A missing baseline means this check compared
         # nothing, and saying so is the whole point.
         bad "no baseline at $SUITE_BASELINE — run again with --write-baseline to seed it (review the list before committing it)"
       else
-        NEW=$(comm -13 <(sort -u "$SUITE_BASELINE") <(printf '%s\n' "$CURRENT"))
-        GONE=$(comm -23 <(sort -u "$SUITE_BASELINE") <(printf '%s\n' "$CURRENT"))
+        BASELINE_BRANCH=$(sed -n 's/^# baseline-branch:[[:space:]]*//p' "$SUITE_BASELINE" | head -1)
+        BASELINE_COMMIT=$(sed -n 's/^# baseline-commit:[[:space:]]*//p' "$SUITE_BASELINE" | head -1)
+        # An unheaded file predates this guard, or was hand-made. Either way
+        # nothing says what it measured, so it cannot be trusted to say anything.
+        if [ -z "$BASELINE_BRANCH" ]; then
+          bad "$SUITE_BASELINE has no provenance header, so there is no way to tell which"
+          echo "      branch it was measured on. Regenerate it with --write-baseline." >&2
+        elif [ -n "$DEPLOYED_BRANCH" ] && [ "$BASELINE_BRANCH" != "$DEPLOYED_BRANCH" ]; then
+          bad "baseline was measured on '$BASELINE_BRANCH' but '$DEPLOYED_BRANCH' is deployed"
+          echo "      A different branch has a different failing set, so every difference would" >&2
+          echo "      be reported as a regression and none of them would be one. Regenerate" >&2
+          echo "      with --write-baseline, or deploy $BASELINE_BRANCH before comparing." >&2
+        else
+        echo "    baseline: ${BASELINE_BRANCH}@${BASELINE_COMMIT:-?} vs deployed ${DEPLOYED_BRANCH:-?}@${DEPLOYED_COMMIT:-?}"
+        BASE_IDS=$(grep -vE '^\s*(#|$)' "$SUITE_BASELINE" | sort -u)
+        NEW=$(comm -13 <(printf '%s\n' "$BASE_IDS") <(printf '%s\n' "$CURRENT"))
+        GONE=$(comm -23 <(printf '%s\n' "$BASE_IDS") <(printf '%s\n' "$CURRENT"))
         if [ -n "$NEW" ]; then
           bad "$(printf '%s\n' "$NEW" | grep -c .) NEW failing test(s) since baseline:"
           printf '%s\n' "$NEW" | sed 's/^/      + /'
         else
-          ok "no new failing tests (baseline: $(grep -c . "$SUITE_BASELINE") known)"
+          ok "no new failing tests (baseline: $(printf '%s\n' "$BASE_IDS" | grep -c .) known)"
         fi
         if [ -n "$GONE" ]; then
           # Not a failure, but it must be visible: a baseline that silently keeps
           # entries for tests that now pass drifts back into meaninglessness.
           warn "$(printf '%s\n' "$GONE" | grep -c .) baseline failure(s) no longer failing — refresh with --write-baseline:"
           printf '%s\n' "$GONE" | sed 's/^/      - /'
+        fi
         fi
       fi
     fi
