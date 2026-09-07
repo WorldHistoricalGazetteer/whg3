@@ -115,18 +115,17 @@ def build(ruleset):
 def _licences(agreement):
     """Every licence this contribution is offered under, to everyone.
 
-    ⚠ A dual grant is **not** scoped by outlet, and a field pair named
-    ``licence`` / ``upstream_licence`` invites exactly that misreading: that MIT
-    applies only when WHG pushes upstream. It cannot. A public MIT grant cannot
-    be narrowed after the fact — once a row reaches Epitran it is MIT to every
-    one of Epitran's users and packagers, which is the entire point of sending
-    it. The per-outlet field says which grant **WHG relies on** for which outlet,
-    not what a recipient may rely on.
+    A list rather than a scalar, and named for what it is: **what the
+    contributor granted, to every recipient.** Under the current terms that is
+    one entry (``CC0-1.0``), and a public-domain dedication asks nothing of
+    anyone, so there is no per-outlet story to tell at all.
 
-    So the list is what the contributor granted, and ``whg_upstream_licence`` is
-    a separate, differently-named fact. A consumer reading only field names
-    should not be able to reach the wrong conclusion, because a consumer reading
-    a ``note`` string is a consumer we are hoping about.
+    ⚠ It stays a list because the previous terms made two grants, and a field
+    pair named ``licence``/``upstream_licence`` invited the reading that one of
+    them applied only when WHG pushed upstream. A public grant cannot be narrowed
+    by outlet after the fact. If a later version makes two grants again, this
+    reports both without a consumer having to infer which governs where — a
+    consumer reading a ``note`` string is a consumer we are hoping about.
     """
     if agreement is None:
         return []
@@ -185,8 +184,6 @@ def suggestions_payload(ruleset=None, since=None, include_applied=False):
             # only when WHG pushed upstream, which is not a thing a public grant
             # can do.
             'licences': _licences(agreement),
-            'whg_upstream_licence': (agreement.terms.upstream_licence_spdx
-                                     if agreement else None),
             'row_status': review.rule.status,
             'reviews_on_row': review.rule.review_count,
         })
@@ -223,8 +220,6 @@ def suggestions_payload(ruleset=None, since=None, include_applied=False):
                                 if proposal.ruleset.current_version else None),
             'credit': (agreement.credit_name if agreement and agreement.credit_public else None),
             'licences': _licences(agreement),
-            'whg_upstream_licence': (agreement.terms.upstream_licence_spdx
-                                     if agreement else None),
             'competing': proposal.competing.count(),
         })
     return out

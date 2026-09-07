@@ -427,16 +427,16 @@ class ContributionTerms(models.Model):
     version = models.CharField(max_length=32, unique=True)
     title = models.CharField(max_length=200)
     body = models.TextField(help_text='Shown in full at the point of contribution.')
-    # Two licences with two ROLES, deliberately not one field and not an M2M.
-    # A dual grant is licensee's choice, so `CC-BY-4.0 OR MIT` would be a correct
-    # SPDX expression — but it cannot say WHICH outlet each governs, and that is
-    # the half a contributor actually cares about. An M2M has the same problem
-    # from the other end: an unordered set forces the template to re-derive the
-    # roles by inspecting SPDX ids, which breaks quietly the first time a third
-    # licence appears.
+    # ONE grant covers every outlet under CC0 — a public-domain dedication asks
+    # nothing of anyone, so there is no second instrument to reconcile and no
+    # per-outlet story to tell. The upstream_* columns are kept because a future
+    # terms version may need them and they cost nothing empty; leaving them NULL
+    # is how a single-grant version says "there is nothing else to know".
     licence_spdx = models.CharField(
-        max_length=64, default='CC-BY-4.0',
-        help_text="SPDX id of the licence WHG publishes the citable dataset under.")
+        max_length=64, default='CC0-1.0',
+        help_text="SPDX id of the grant contributors make. Under a single grant "
+                  "(e.g. CC0) this covers every outlet, including rows contributed "
+                  "upstream, and upstream_licence is left blank.")
     licence = models.ForeignKey(
         'licensing.License', on_delete=models.PROTECT, null=True, blank=True,
         related_name='phonetic_contribution_terms',
@@ -449,10 +449,10 @@ class ContributionTerms(models.Model):
     # them to discover it.
     upstream_licence_spdx = models.CharField(
         max_length=64, blank=True,
-        help_text="SPDX id of the licence WHG relies on when contributing a row "
-                  "upstream. NOT a restriction: both grants are made to every "
-                  "recipient, and a public grant cannot be scoped by outlet "
-                  "afterwards. Blank if WHG does not contribute upstream.")
+        help_text="Only for terms that make a SECOND, different grant for rows "
+                  "contributed upstream. Blank when one grant covers everything. "
+                  "NOT a restriction even when set: a public grant cannot be "
+                  "scoped by outlet after the fact.")
     upstream_licence = models.ForeignKey(
         'licensing.License', on_delete=models.PROTECT, null=True, blank=True,
         related_name='phonetic_upstream_terms',

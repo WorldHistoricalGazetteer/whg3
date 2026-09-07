@@ -43,13 +43,11 @@
         being named. Either is fine, and you can change your mind later.</p>
     </div></div></div>
     <div class="col-md-6"><div class="card h-100 border-success"><div class="card-body py-2">
-      <h6 class="mb-1"><i class="fas fa-scale-balanced text-success me-1"></i>Free for anyone to use — and you are credited in the dataset</h6>
-      <p class="small mb-0">Your suggestions are published in WHG's citable dataset under
-        {% if terms.licence %}<a href="{{ terms.licence.url }}" target="_blank" rel="noopener">{{ terms.licence.label }}</a>{% else %}{{ terms.licence_spdx }}{% endif %},
-        which requires anyone reusing them to credit you.
-        {% if terms.upstream_licence_spdx %}Rows we send upstream to Epitran go under
-        <code>{{ terms.upstream_licence_spdx }}</code>, whose file format has no room for a
-        credit line — we name you in the pull request instead.{% endif %}</p>
+      <h6 class="mb-1"><i class="fas fa-scale-balanced text-success me-1"></i>Free for anyone to use, with no strings</h6>
+      <p class="small mb-0">You place your suggestions in the public domain
+        ({% if terms.licence %}<a href="{{ terms.licence.url }}" target="_blank" rel="noopener">{{ terms.licence.label }}</a>{% else %}{{ terms.licence_spdx }}{% endif %}),
+        giving up whatever rights you might have in them. We credit you by name because we
+        think it right, not because the licence makes anyone — including us — do it.</p>
     </div></div></div>
     <div class="col-md-6"><div class="card h-100"><div class="card-body py-2">
       <h6 class="mb-1"><i class="fas fa-hand text-secondary me-1"></i>Nothing changes automatically</h6>

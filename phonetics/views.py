@@ -688,9 +688,9 @@ def suggestions_json(request):
                 'the indexing repo and the next sync will mark adopted proposals.',
         'licensing': {
             'note': 'Every licence in a suggestion\'s "licences" list is granted to '
-                    'EVERY recipient, not scoped by outlet. "whg_upstream_licence" '
-                    'records which of them WHG relies on when contributing a row '
-                    'upstream; it does not limit what anyone else may rely on.',
+                    'EVERY recipient and is not scoped by outlet. Under the current '
+                    'terms that is a single public-domain dedication, which asks '
+                    'nothing of anyone who uses the row.',
         },
         'suggestions': export_mod.suggestions_payload(
             ruleset=ruleset, since=since,

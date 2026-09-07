@@ -397,7 +397,7 @@ class ReviewTests(SyncBase):
         ContributionTerms.objects.update(is_active=False)
         self.terms = ContributionTerms.objects.create(
             version='t1', title='t', body='b', is_active=True, signed_off=True,
-            licence_spdx='CC-BY-4.0', upstream_licence_spdx='MIT')
+            licence_spdx='CC0-1.0')
         self.alice = make_user('alice')
         self.bob = make_user('bob')
 
@@ -503,12 +503,12 @@ class ExportTests(ReviewTests):
         # Both grants, to every recipient — not a per-outlet pair, which invited
         # the reading that MIT applied only when WHG pushed upstream. A public
         # grant cannot be narrowed by outlet after the fact.
-        self.assertEqual(payload[0]['licences'],
-                         [self.terms.licence_spdx, self.terms.upstream_licence_spdx])
-        self.assertEqual(payload[0]['whg_upstream_licence'],
-                         self.terms.upstream_licence_spdx)
+        self.assertEqual(payload[0]['licences'], [self.terms.licence_spdx])
+        # No scalar and no per-outlet field: both names invited the reading that a
+        # grant applied only to one outlet, which a public grant cannot do.
         self.assertNotIn('licence', payload[0])
         self.assertNotIn('upstream_licence', payload[0])
+        self.assertNotIn('whg_upstream_licence', payload[0])
 
     def test_the_feed_names_the_exact_bytes_a_judgement_was_made_against(self):
         """The version key must be content-addressed, not a database id.
@@ -534,15 +534,11 @@ class ExportTests(ReviewTests):
 
 class SeededTermsTests(TestCase):
 
-    def test_the_shipped_terms_are_cc_by_4_0_and_anchored_to_the_licence_vocabulary(self):
+    def test_the_active_terms_are_anchored_to_the_licence_vocabulary(self):
+        """Which grant it is lives in ContributionTermsTests; this is the wiring."""
         terms = active_terms()
-        self.assertEqual(terms.licence_spdx, 'CC-BY-4.0')
         self.assertIsNotNone(terms.licence, 'not linked to the licensing app vocabulary')
-        self.assertEqual(terms.licence.spdx_id, 'CC-BY-4.0')
-        self.assertIn('Creative Commons Attribution 4.0', terms.body)
-        # It says how a CC BY row can live inside Epitran's MIT package, because
-        # that is the one question the choice actually raises.
-        self.assertIn('MIT', terms.body)
+        self.assertEqual(terms.licence.spdx_id, terms.licence_spdx)
 
     @override_settings(PHONETICS_PUBLIC=True)
     def test_draft_terms_cannot_open_the_app_to_the_public(self):
@@ -557,23 +553,29 @@ class SeededTermsTests(TestCase):
         self.assertTrue(is_visible(AnonymousUser()))
 
 
-class DualLicenceTermsTests(TestCase):
-    """The signed-off dual grant, and the two things about it that could go wrong quietly."""
+class ContributionTermsTests(TestCase):
+    """The current grant, and the things about it that could go wrong quietly."""
 
-    def test_the_active_terms_name_both_outlets(self):
+    def test_one_public_domain_grant_covers_every_outlet(self):
         terms = active_terms()
-        self.assertEqual(terms.version, '2026-09-07')
-        self.assertEqual(terms.licence_spdx, 'CC-BY-4.0')
-        self.assertEqual(terms.upstream_licence_spdx, 'MIT')
+        self.assertEqual(terms.version, '2026-09-07-cc0')
+        self.assertEqual(terms.licence_spdx, 'CC0-1.0')
         self.assertIsNotNone(terms.licence)
-        self.assertIsNotNone(terms.upstream_licence)
+        self.assertFalse(terms.licence.attribution_required)
+        # Blank is the statement: one grant, nothing else to know.
+        self.assertEqual(terms.upstream_licence_spdx, '')
+        self.assertIsNone(terms.upstream_licence)
 
-    def test_the_older_wording_is_kept_but_no_longer_active(self):
-        """Agreements are FKs to a version. Superseding must not rewrite history:
-        this change adds an MIT grant nobody who saw the draft ever made."""
-        old = ContributionTerms.objects.get(version='2026-09-draft')
-        self.assertFalse(old.is_active)
-        self.assertNotIn('MIT licence', old.body)
+    def test_every_superseded_wording_is_kept_and_inactive(self):
+        """Agreements are FKs to a version, so a materially different grant is a
+        NEW row. Rewriting would record people as making a grant they never saw —
+        the draft never mentioned MIT, and neither draft mentioned CC0."""
+        for version in ('2026-09-draft', '2026-09-07'):
+            old = ContributionTerms.objects.get(version=version)
+            self.assertFalse(old.is_active, version)
+            self.assertNotIn('CC0', old.body, version)
+        self.assertNotIn('MIT licence',
+                         ContributionTerms.objects.get(version='2026-09-draft').body)
         self.assertEqual(ContributionTerms.objects.filter(is_active=True).count(), 1)
 
     def test_mit_is_not_offered_as_a_dataset_licence(self):
@@ -597,24 +599,26 @@ class DualLicenceTermsTests(TestCase):
             self.assertFalse(is_visible(AnonymousUser()))
 
     def test_the_warranty_is_on_the_checkbox_the_contributor_ticks(self):
-        """A warranty nobody reads is worse than no warranty."""
+        """A warranty nobody reads is worse than no warranty — and under CC0 it
+        matters MORE, because a waiver of rights you do not hold is worthless."""
         label = AgreementForm().fields['accept'].label
         self.assertIn('mine to give', label)
-        ContributionTerms.objects.filter(version='2026-09-07').update(signed_off=True)
+        ContributionTerms.objects.filter(version='2026-09-07-cc0').update(signed_off=True)
         self.client.force_login(make_user('warrant', is_staff=True))
         for url in (reverse('phonetics:terms'), reverse('phonetics:terms-modal')):
             with self.subTest(url=url):
                 self.assertContains(self.client.get(url), 'mine to give')
 
-    def test_both_surfaces_say_where_each_licence_applies(self):
-        ContributionTerms.objects.filter(version='2026-09-07').update(signed_off=True)
+    def test_both_surfaces_say_the_credit_is_a_choice_not_an_obligation(self):
+        """CC0 asks nothing of anyone, so implying a licence compels the credit
+        would be claiming an obligation that does not exist."""
+        ContributionTerms.objects.filter(version='2026-09-07-cc0').update(signed_off=True)
         self.client.force_login(make_user('outlets', is_staff=True))
         for url in (reverse('phonetics:terms'), reverse('phonetics:terms-modal')):
             with self.subTest(url=url):
                 body = self.client.get(url).content.decode()
-                self.assertIn('citable dataset', body)
-                self.assertIn('upstream to Epitran', body)
-                self.assertIn('MIT', body)
+                self.assertIn('public domain', body)
+                self.assertIn('think it right', body)
 
 
 class MyanmarQuestionTests(TestCase):
@@ -702,7 +706,7 @@ class FormAndViewTests(SyncBase):
         ContributionTerms.objects.update(is_active=False)
         self.terms = ContributionTerms.objects.create(
             version='t1', title='t', body='b', is_active=True, signed_off=True,
-            licence_spdx='CC-BY-4.0', upstream_licence_spdx='MIT')
+            licence_spdx='CC0-1.0')
         self.user = make_user('v', is_staff=True)
         self.client.force_login(self.user)
         ReviewerAgreement.objects.create(user=self.user, terms=self.terms)
@@ -770,7 +774,7 @@ class NewRuleProposalTests(SyncBase):
         ContributionTerms.objects.update(is_active=False)
         self.terms = ContributionTerms.objects.create(
             version='t1', title='t', body='b', is_active=True, signed_off=True,
-            licence_spdx='CC-BY-4.0', upstream_licence_spdx='MIT')
+            licence_spdx='CC0-1.0')
         self.user = make_user('adder', is_staff=True)
         self.agreement = ReviewerAgreement.objects.create(user=self.user, terms=self.terms)
         self.client.force_login(self.user)
