@@ -632,6 +632,37 @@ class ContributionTermsTests(TestCase):
                 self.assertIn('think it right', body)
 
 
+class StylesheetIsActuallyLoadedTests(SyncBase):
+    """The stylesheet must be linked somewhere a browser will honour it.
+
+    It was not. `base_webpack.html` puts its `extra_css` block INSIDE a
+    `<style>` element — that block takes raw CSS rules — so a `<link>` emitted
+    there sits inside `<style>`, is invalid, and is silently dropped. Every page
+    returned 200, rendered acceptably on Bootstrap defaults, and logged nothing.
+
+    A stylesheet that never loads is invisible unless something checks, so this
+    checks: the link must appear AFTER the `</style>` that block lives in.
+    """
+
+    def setUp(self):
+        self.ruleset, _ = self.make_ruleset()
+        ContributionTerms.objects.update(is_active=False)
+        ContributionTerms.objects.create(version='t', title='t', body='b',
+                                         is_active=True, signed_off=True)
+        self.client.force_login(make_user('css', is_staff=True))
+
+    def test_the_stylesheet_link_is_outside_the_style_element(self):
+        body = self.client.get(reverse('phonetics:home')).content.decode()
+        link = body.find('phonetics/phonetics.css')
+        self.assertNotEqual(link, -1, 'the stylesheet is not linked at all')
+        close_style = body.find('</style>')
+        self.assertNotEqual(close_style, -1, 'no </style> in the page — has the base changed?')
+        self.assertGreater(
+            link, close_style,
+            'the phonetics stylesheet <link> is inside a <style> element, where '
+            'browsers ignore it. Use {% block extra_head %}, not {% block extra_css %}.')
+
+
 class CreditQuestionTests(SyncBase):
     """Attribution is asked as a question, and the server enforces the answer.
 

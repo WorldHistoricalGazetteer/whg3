@@ -1,7 +1,16 @@
 {% extends "main/base_webpack.html" %}
 {% load static %}
 {% block title %}<title>WHG :: {% block page_title %}Phonetic rule review{% endblock %}</title>{% endblock %}
-{% block extra_css %}<link rel="stylesheet" href="{% static 'phonetics/phonetics.css' %}">{% endblock %}
+{% comment %}
+  ⚠ `extra_head`, NOT `extra_css`. In main/base_webpack.html the `extra_css`
+  block sits INSIDE a `<style>…</style>` element, so it takes raw CSS rules — a
+  <link> tag placed there is emitted inside <style>, is not valid there, and is
+  silently ignored. This stylesheet never loaded at all until 2026-09-07, on any
+  page, and nothing said so: the pages returned 200, rendered acceptably on
+  Bootstrap defaults, and logged no console error. `extra_head` is outside the
+  style element and is where a <link> belongs.
+{% endcomment %}
+{% block extra_head %}<link rel="stylesheet" href="{% static 'phonetics/phonetics.css' %}">{% endblock %}
 
 {% block deferredScripts %}
   var scripts = [
