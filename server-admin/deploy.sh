@@ -35,7 +35,11 @@ Options:
   --image=<tag>    Point this site at a different Docker image tag before deploying.
                    Needed after a requirements.txt change: build_docker.py pushes the
                    image, this moves the site onto it. Edits DOCKER_IMAGE_TAG in
-                   /home/whgadmin/sites/env_template.py (backed up first).
+                   /home/whgadmin/sites/env_template.py (backed up first), then
+                   recreates ONLY the running services that use the WHG image
+                   (web, celery worker/beat, flower) with --no-deps. Postgres,
+                   redis and hocuspocus are never touched. Implies the recreate a
+                   plain restart cannot do, so --celery is redundant with it.
   --celery    Also restart celery worker and beat (with 'restart')
   --migrate   Run Django migrations after deploy
   --collectstatic  Run Django collectstatic after deploy
@@ -55,6 +59,22 @@ Examples:
 EOF
     exit 0
 }
+
+# ─── Body ────────────────────────────────────────────────────────────────────
+#
+# Everything below runs inside main(). That is not style: this script does
+# `git reset --hard` on the very checkout it is being read from, and bash reads a
+# script incrementally by byte offset. Replace the file mid-run and execution
+# resumes at an offset that now lands in the middle of some other line. It stayed
+# latent for as long as the file only changed between deploys; on 2026-09-07 a
+# deploy shipped a change to this script and ran it in the same breath.
+#
+# Bash parses a function completely before executing any of it, and the final
+# `main "$@"; exit $?` is read as one line, so nothing is read from disk after
+# main returns. The body is intentionally NOT re-indented — the wrap is a safety
+# property, and a whitespace-only diff over 180 lines would bury it.
+
+main() {
 
 # ─── Parse arguments ─────────────────────────────────────────────────────────
 
@@ -186,10 +206,33 @@ case "$ACTION" in
             # `docker compose restart` restarts the containers that already exist and
             # never re-reads `image:`, so a plain restart would leave the stack on the
             # old image while env_template.py claimed the new one — silently, which is
-            # the failure set_image_tag.py exists to prevent. `up -d` recreates exactly
-            # the services whose image or config changed.
-            echo "── Moving containers onto image $IMAGE_TAG..."
-            $COMPOSE up -d
+            # the failure set_image_tag.py exists to prevent. `up -d` is what re-reads
+            # it.
+            #
+            # But name the services, and pass --no-deps. A bare `up -d` brings up the
+            # WHOLE stack: it recreated postgres on dev on 2026-09-07, which nobody
+            # running a flag called --image= expects a database container to be in
+            # scope for, and it starts everything at once — which OOM-killed celery
+            # twice on a host sitting at 9G/15G with nothing free. Only the services
+            # that actually run the WHG image need to move.
+            #
+            # Only services with a RUNNING container are named, so this moves what is
+            # deployed and never silently starts something that was deliberately down.
+            IMAGE_SERVICES=""
+            for pair in "web:$WEB" "celery_worker:$WORKER" "celery_beat:$BEAT" "flower:flower_${PREFIX}"; do
+                if docker ps --filter "name=^${pair#*:}$" --format '{{.Names}}' | grep -q .; then
+                    IMAGE_SERVICES="$IMAGE_SERVICES ${pair%%:*}"
+                fi
+            done
+            if [ -z "$IMAGE_SERVICES" ]; then
+                # Nothing recognisable is running; the earlier -z "$RUNNING" branch
+                # should have caught this, so say so rather than guessing wider.
+                echo "── No running WHG-image containers found for $PREFIX; nothing to move."
+                exit 1
+            fi
+            echo "── Moving onto image $IMAGE_TAG:$IMAGE_SERVICES"
+            # shellcheck disable=SC2086  # deliberate word-splitting of the service list
+            $COMPOSE up -d --no-deps $IMAGE_SERVICES
         elif [ "$ACTION" = "full" ]; then
             echo "── Restarting all containers..."
             $COMPOSE restart
@@ -239,3 +282,8 @@ if [ "$WITH_LOGS" = true ]; then
     docker logs -f "$WEB"
 fi
 
+}
+
+# One line on purpose: bash has both commands in hand before main runs, so it
+# never reads from the (possibly rewritten) file again.
+main "$@"; exit $?

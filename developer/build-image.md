@@ -49,11 +49,18 @@ ssh whg 'bash ~/sites/dev-whgazetteer-org/server-admin/deploy.sh dev restart --i
 
 `--image=` implies a `docker compose up -d` rather than a `restart` — which is
 also why `--celery` is not needed with it, the worker and beat are recreated too.
-It has to, because
-`docker compose restart` restarts the containers that already exist and never
-re-reads `image:` — a plain restart would leave the stack on the old image while
-`env_template.py` claimed the new one, silently. `up -d` recreates exactly the
-services whose image or config changed.
+It has to, because `docker compose restart` restarts the containers that already
+exist and never re-reads `image:` — a plain restart would leave the stack on the
+old image while `env_template.py` claimed the new one, silently.
+
+It names the services rather than running a bare `up -d`, and passes `--no-deps`:
+only the **running** containers that use the WHG image (web, celery worker/beat,
+flower) are recreated. Postgres, redis and hocuspocus are left alone. A bare
+`up -d` recreated the database container on dev on 2026-09-07 — which nobody
+running a flag called `--image=` expects to be in scope — and brought the whole
+stack up at once, OOM-killing celery twice on a host with no free memory. On prod
+that is a bigger stack on the same host, so this is a precondition of pointing
+`--image=` at production, not a refinement.
 
 ⚠ **Anything hand-installed inside a running container dies here.** That is the
 point — it is also how you check the image really carried what you built it for.
