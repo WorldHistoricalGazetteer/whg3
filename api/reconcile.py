@@ -1335,6 +1335,26 @@ def reconcile_place_es(query, user=None):
     extra = {}
     if scope_info is not None:
         extra["scope"] = scope_info
+
+    # Did the gateway answer at all? `crc_client` records the reason on every failure path, but
+    # until now that reason only reached the client through the `scope` block above — i.e. ONLY for
+    # a spatially-scoped query. An UNSCOPED query whose gateway call timed out returned
+    # `{"result": [], "geojson": None, "namespaces_searched": [...]}`, which is byte-identical to a
+    # genuine "no such place". Callers therefore banked gateway outages as honest misses, and
+    # because the failure correlates with load it did so hardest on the largest runs — the ones
+    # nobody re-checks by hand. Reported unconditionally now, as a presence-means-failure key:
+    # a client that doesn't know it ignores it, and one that does can retry rather than cache a
+    # false negative. See place#144 (which established the fail-closed contract for the scoped
+    # half) and the 2026-09-08 incident that exposed the unscoped half.
+    gw_error = crc_meta.get("error")
+    if gw_error:
+        extra["gateway"] = {
+            "answered": False,
+            "error": gw_error,  # timeout | connection | http | unexpected
+            "message": "The gazetteer service did not answer this query, so no candidates could be "
+                       "retrieved. This is not evidence that the place is absent — please retry "
+                       "shortly rather than recording it as unmatched.",
+        }
     if crc_meta.get("variants_used") is not None:
         extra["variants_used"] = crc_meta["variants_used"]
     # Forms the gateway derived for itself (de-bracketing a "Broxbourn (St. Augustine)", place#199).
@@ -1352,14 +1372,22 @@ def reconcile_place_es(query, user=None):
     # holds, and falling back to whatever the hits happen to show is closer to
     # the truth than claiming to know. Absent on an older gateway → the caller
     # falls back to id-derivation.
+    #
+    # NOTHING may be claimed as searched on the strength of having ASKED for it. When the gateway
+    # errored, the fallbacks below would otherwise report the requested namespaces as searched —
+    # asserting a search that never ran, and feeding those sources' terms into the root
+    # `attribution` block on a response no source contributed to.
     searched = set()
-    if namespaces is None or WHG_NAMESPACE in namespaces:
+    if (namespaces is None or WHG_NAMESPACE in namespaces) and not (suppress_legacy and gw_error):
+        # `whg` is served by the legacy index unless a spatial scope suppressed it, in which case
+        # the gateway serves it instead (place#183) — so a gateway failure with legacy suppressed
+        # means `whg` was not searched by either path.
         searched.add(WHG_NAMESPACE)
     gw_searched = crc_meta.get("namespaces_searched")
     if gw_searched:
         searched.update(gw_searched)
-    elif crc_namespaces:
-        # Gateway didn't echo (older build), but we know what we asked it for.
+    elif crc_namespaces and not gw_error:
+        # Gateway didn't echo (older build), but we know what we asked it for — and it did answer.
         searched.update(crc_namespaces)
     if crc_meta.get("namespaces"):
         # Present-in-results, a subset of the above but authoritative when the
