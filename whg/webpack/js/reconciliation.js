@@ -2626,7 +2626,7 @@ function resetUI() {
   el('recon-review-map').classList.add('d-none');
   el('recon-fullmap-pane').classList.add('d-none');
   el('recon-export').classList.add('d-none');
-  lastScope = null; lastVariantsDropped = 0; lastDerivedForms = new Set(); // drop the previous dataset's gateway report
+  lastScope = null; lastVariantsDropped = 0; lastUnanswered = 0; lastDerivedForms = new Set(); // drop the previous dataset's gateway report
   ['recon-map-body', 'recon-preview-head', 'recon-preview-body', 'recon-summary', 'recon-saved',
     'recon-geom-notice', 'recon-rowfilter-notice', 'recon-rowfilter-notice-recon',
     'recon-coords', 'recon-dates', 'recon-results-body', 'recon-recon-summary', 'recon-progress-text',
@@ -5662,17 +5662,35 @@ function setReconSummary(html) { el('recon-recon-summary').innerHTML = html; }
 let lastScope = null;          // scope object from the most recent run (dataset-wide, so one per run)
 let lastVariantsDropped = 0;   // name variants we sent that the gateway didn't query (cap/dedupe)
 let lastDerivedForms = new Set(); // name forms the GATEWAY derived for itself (place#199/#206)
+// Queries the gateway never answered (`gateway.answered === false`). A timeout is NOT a miss, so
+// these rows are left UNRECONCILED rather than stored with an empty candidate list: a stored empty
+// match reads as "searched, found nothing", survives into review and export, and re-running skips
+// it because reconcilePass only queries rows with no match. Counting them here lets the run tell
+// the user to retry, and leaves the rows in a state where retrying actually does something.
+let lastUnanswered = 0;
 function scopeFailed() { return !!(lastScope && lastScope.applied === false); }
+function gatewayFailed() { return lastUnanswered > 0; }
 function idList(ids, max) {
   const a = (ids || []).slice(0, max || 4).map((s) => esc(String(s)));
   const more = (ids || []).length - a.length;
   return a.join(', ') + (more > 0 ? ` +${more} more` : '');
 }
+function unansweredNoteHTML() {
+  if (!lastUnanswered) return '';
+  return `<div class="alert alert-danger py-2 px-3 mb-2">
+    <i class="fas fa-circle-exclamation me-1"></i><strong>WHG’s gazetteer service didn’t answer
+    ${lastUnanswered.toLocaleString()} ${lastUnanswered === 1 ? 'query' : 'queries'}</strong> — those rows were
+    <em>left unreconciled</em>, not recorded as “no match”. Reconcile the column again to retry just those rows;
+    if it keeps happening, try again in a few minutes.</div>`;
+}
 function renderScopeNotice() {
   const box = el('recon-scope-notice'); if (!box) return;
-  if (!lastScope) { box.innerHTML = (lastVariantsDropped ? variantNoteHTML() : '') + derivedFormsHTML(); return; }
+  if (!lastScope) {
+    box.innerHTML = unansweredNoteHTML() + (lastVariantsDropped ? variantNoteHTML() : '') + derivedFormsHTML();
+    return;
+  }
   const s = lastScope;
-  const parts = [];
+  const parts = [unansweredNoteHTML()];
   if (s.applied === false) {
     // Fail-closed: say the region couldn't be applied, NOT "no candidates found".
     parts.push(`<div class="alert alert-danger py-2 px-3 mb-2">
@@ -6066,7 +6084,11 @@ function renderResultsTable(built) {
       // are the ones scanning a table full of wrong auto-matches (place#202).
       ((auto || nomatch) ? ` <span class="text-muted"><i class="fas fa-flag me-1"></i>Click a row’s status badge to send it
         to review — a wrong <span class="badge bg-success">auto ✓</span>, or a
-        <span class="badge bg-warning text-dark">no match</span> you want to search for by hand.</span>` : ''));
+        <span class="badge bg-warning text-dark">no match</span> you want to search for by hand.</span>` : '') +
+      // Rows the gateway never answered are counted in `pending`, which is honest but easy to read as
+      // "not got to yet". Name them, or an outage looks like an unfinished run.
+      (gatewayFailed() ? ` <span class="text-danger"><i class="fas fa-circle-exclamation me-1"></i><strong>${lastUnanswered.toLocaleString()}</strong>
+        of those are pending because WHG’s gazetteer service didn’t answer — reconcile again to retry them.</span>` : ''));
   }
 
   // Build the full ordered row-info list once; the table is virtualised (only the visible window is
@@ -8077,7 +8099,7 @@ async function reconcileStage() {
   }
   if (columnState(pos) === 'review') { setReconSummary('<span class="text-warning">Confirm this column’s matches (Step 4) before reconciling the next.</span>'); return; }
   reconStaleNote = ''; // a fresh run clears any "parent changed" notice
-  lastScope = null; lastVariantsDropped = 0; lastDerivedForms = new Set(); renderScopeNotice(); // and any previous scope report
+  lastScope = null; lastVariantsDropped = 0; lastUnanswered = 0; lastDerivedForms = new Set(); renderScopeNotice(); // and any previous scope report
   project.matches = project.matches || {};
   trackOnce('MyD: reconcile', { columns: String(chain.length) });
   toggleRunning(true);
@@ -8273,6 +8295,15 @@ async function reconcilePass(colIndex, parentCol, csrf, passNo, passTotal) {
     }
     slice.forEach((u, j) => {
       const qd = data['q' + j] || {};
+      // The gateway never answered this query. Presence of the key IS the failure (the server emits
+      // it only on a failed gateway call), so an older server that doesn't send it behaves exactly
+      // as before. Leave the row alone: no match written, no decision touched, nothing cached — an
+      // outage must not become a stored "no match" that review shows as searched and a re-run skips.
+      if (qd.gateway && qd.gateway.answered === false) {
+        lastUnanswered += u.memberKeys.length;
+        console.warn('[recon] gateway did not answer', u.repKey, qd.gateway.error || '');
+        return;
+      }
       // Gateway scope/variant reporting (place#144). Scope is dataset-wide, so the first one we see
       // in a run describes the whole run. `undefined` means an older gateway — leave lastScope null.
       if (qd.scope && !lastScope) lastScope = qd.scope;
