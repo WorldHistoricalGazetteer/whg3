@@ -495,7 +495,14 @@ def make_candidate(hit, query_text, max_score, schema_space):
     name = get_canonical_name(src, hit["_id"])
     alt_names = get_alternative_names(src, name)
     score = normalize_score(hit["_score"], max_score)
-    is_exact = name.lower() == query_text.lower()
+    # `query_text` is None for a name-less (pure-spatial) query — `normalise_query_params` turns an
+    # absent or empty `query` into None, and `contained_in`/`bounds`/a nearby circle make that a
+    # legal request. Nothing was asked for by name, so no candidate can be an exact match: `False`
+    # is the honest answer, and it matters because `match: true` tells OpenRefine to auto-accept,
+    # which here would auto-confirm an arbitrary member of the container. Dereferencing it instead
+    # raised AttributeError and 500'd the whole batch (one bad query takes the other nine with it,
+    # since process_queries._run catches only ValueError).
+    is_exact = bool(query_text) and name.lower() == query_text.lower()
     ccodes = src.get("ccodes", [])
     # has_geom: does this place have a full POLYGON geometry (i.e. usable as a `contained_in`
     # region)? Prefer the explicit flag forwarded from the gateway; otherwise infer it from the
