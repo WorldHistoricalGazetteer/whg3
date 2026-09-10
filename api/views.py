@@ -1359,14 +1359,43 @@ class PlaceCompareAPIView(generics.RetrieveAPIView):
 
 @extend_schema(exclude=True)
 class PlaceDetailSourceAPIView(generics.RetrieveAPIView):
-    """  single database place record by src_id  """
-    queryset = Place.objects.all()
+    """A single place, addressed by the contributor's own identifier.
+
+    ``/api/place/<dataset label>/<src_id>/`` — the point of it being that a
+    contributor can publish links using the ids they already have, without
+    adopting ours.
+
+    Until 2026-09-10 the route was shadowed by the ``place-trap`` sinkhole and
+    so was never reachable. Two things had to be true before unshadowing it was
+    safe, and neither was:
+
+    * **The dataset was ignored.** With ``queryset = Place.objects.all()`` and
+      ``lookup_field = 'src_id'``, the captured ``dslabel`` was never applied.
+      A src_id occurring in more than one dataset returned whichever row the
+      database offered first — the wrong record, silently.
+    * **Reads were open to anyone.** ``IsAuthenticatedOrReadOnly`` and
+      ``IsOwnerOrReadOnly`` both permit any GET, so combined with the above,
+      guessing a src_id would have served places from private, unpublished
+      datasets.
+
+    ``get_queryset`` now scopes to the dataset named in the URL, and to
+    datasets the caller is entitled to see: public ones, plus their own.
+    """
     serializer_class = PlaceSerializer
     renderer_classes = [PrettyJsonRenderer]
 
     lookup_field = 'src_id'
     permission_classes = [permissions.IsAuthenticatedOrReadOnly, IsOwnerOrReadOnly]
     authentication_classes = [SessionAuthentication]
+
+    def get_queryset(self):
+        # Place.dataset is a FK to Dataset with to_field='label', so the label
+        # is matched by traversing the relation rather than on the raw column.
+        qs = Place.objects.filter(dataset__label=self.kwargs['dslabel'])
+        user = self.request.user
+        if user.is_authenticated:
+            return qs.filter(Q(dataset__public=True) | Q(dataset__owner=user))
+        return qs.filter(dataset__public=True)
 
 
 """

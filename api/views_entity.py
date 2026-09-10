@@ -13,7 +13,11 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
+from rest_framework.exceptions import NotAuthenticated
+from rest_framework.permissions import AllowAny
+from rest_framework.renderers import JSONRenderer, StaticHTMLRenderer
 from rest_framework.response import Response
+from rest_framework.throttling import AnonRateThrottle
 
 from api.authentication import AuthenticatedAPIView
 from api.crc_client import crc_fetch_places
@@ -27,10 +31,52 @@ from api.schemas import entity_schema, TYPE_MAP
 logger = logging.getLogger('reconciliation')
 
 
-def _fetch_crc_place(place_id: str, user=None) -> dict | None:
-    """Fetch a single CRC place from the gateway, or return None."""
-    result = crc_fetch_places([place_id], user=user)
+def _fetch_crc_place(place_id: str, user=None,
+                     allow_anonymous: bool = False) -> dict | None:
+    """Fetch a single CRC place from the gateway, or return None.
+
+    ``allow_anonymous`` is passed through to ``crc_client._is_enabled``, which
+    otherwise refuses an unauthenticated caller outright. Set it only for
+    persistent-identifier resolution — see ``PublicEntityReadAPIView``.
+    """
+    result = crc_fetch_places([place_id], user=user,
+                              allow_anonymous=allow_anonymous)
     return result.get(place_id)
+
+
+def _crc_timespans_to_when(timespans_raw) -> dict:
+    """Convert the gateway's ``timespans`` into an LPF ``when``.
+
+    The gateway sends bare integer years — ``[{"start": 1744, "end": 1747}]``,
+    negative for BCE — while LPF wants each bound as an object keyed by the
+    kind of knowledge it represents. These are the extents an authority
+    asserts, not estimates bracketed by uncertainty, so both bounds are ``in``.
+
+    Until 2026-09-10 this was hardcoded to ``{}``, so every authority record
+    resolved through a persistent identifier arrived undated even though the
+    gateway had sent the dates. That matters most for exactly the sources whose
+    content *is* temporal: a Cliopatria polity is one dated extent of a polity
+    that had many, and without ``when`` there is nothing to say which.
+    """
+    timespans = []
+    for span in timespans_raw or []:
+        if not isinstance(span, dict):
+            continue
+        bounds = {}
+        for bound in ("start", "end"):
+            year = span.get(bound)
+            if year is None or isinstance(year, bool):
+                continue
+            if isinstance(year, dict):  # already an LPF bound — pass it through
+                bounds[bound] = year
+                continue
+            try:
+                bounds[bound] = {"in": str(int(year))}
+            except (TypeError, ValueError):
+                continue
+        if bounds:
+            timespans.append(bounds)
+    return {"timespans": timespans} if timespans else {}
 
 
 def _crc_place_to_lpf(crc_place: dict, request=None) -> dict:
@@ -45,6 +91,7 @@ def _crc_place_to_lpf(crc_place: dict, request=None) -> dict:
     types_raw = crc_place.get("types", [])
     geometries = crc_place.get("geometries", [])
     links_raw = crc_place.get("links", [])
+    timespans_raw = crc_place.get("timespans", [])
 
     # Build a proper URI for @id
     if request is not None:
@@ -110,7 +157,7 @@ def _crc_place_to_lpf(crc_place: dict, request=None) -> dict:
         "descriptions": [],
         "depictions": [],
         "relations": [],
-        "when": {},
+        "when": _crc_timespans_to_when(timespans_raw),
     }
 
     if fclasses:
@@ -267,13 +314,132 @@ def _place_lookup_id(obj_type, raw_id):
     return pk if pk is not None else raw_id
 
 
+# ---------------------------------------------------------------------------
+# Persistent-identifier resolution
+# ---------------------------------------------------------------------------
+#
+# WHG identifiers are published through w3id.org, which 303-redirects here:
+#
+#   whg:place:clio:<id>
+#     -> https://w3id.org/whg/id/place:clio:<id>
+#     -> /entity/place:clio:<id>/      (Accept: text/html)
+#     -> /entity/place:clio:<id>/api   (Accept: application/ld+json)
+#
+# A client following that chain arrives with no cookie, no API token and no
+# CSRF header, so `IsAuthenticated` made every published identifier answer 401.
+# An identifier that requires an API key is not a persistent identifier.
+#
+# Anonymous access is opened for exactly one case: a place id belonging to an
+# AUTHORITY gazetteer (`clio:`, `gn:`, `tgn:`, …), served from the CRC gateway
+# and already public reference data.
+#
+# It is NOT opened for anything else, and the reason is specific rather than
+# merely cautious: the Postgres-backed querysets behind the other types are not
+# owner-scoped. `api/querysets.py::place_feature_queryset` returns
+# `Place.objects` unfiltered, and `api/schemas.py::TYPE_MAP` defines no
+# `feature_queryset` at all for `dataset` or `collection` — so serving those
+# anonymously would publish unpublished contributed places and private datasets.
+
+
+class LinkedDataJSONRenderer(JSONRenderer):
+    """Serve the same JSON to clients asking for JSON-LD.
+
+    `DEFAULT_RENDERER_CLASSES` is JSONRenderer alone, which advertises only
+    `application/json`. w3id's content negotiation sends a linked-data client
+    here with `Accept: application/ld+json` — the media type LPF actually is —
+    and DRF answered 406 before authentication was even reached. Declared
+    per-view rather than in settings, so it does not appear as a spurious
+    format option throughout the Swagger UI.
+    """
+    media_type = 'application/ld+json'
+    format = 'jsonld'
+
+
+class LinkedDataHTMLRenderer(JSONRenderer):
+    """Show the same LPF to a browser, as escaped, readable text.
+
+    The detail view 303s a browser on to `/api` (an authority place has no
+    Django detail page), and the browser repeats its original `Accept:
+    text/html` — so without this the HTML arm of a resolved identifier ended
+    at a 406 one redirect after succeeding.
+
+    The body is escaped and wrapped rather than served as raw JSON under a
+    `text/html` content type: gazetteer records carry contributed free text,
+    and a browser told to treat that as HTML would execute any markup in it.
+
+    This is a stopgap, not a landing page. A human resolving an identifier
+    deserves better than a JSON dump; there is currently no id-addressable
+    human page for a gateway-backed authority place to send them to.
+    """
+    media_type = 'text/html'
+    format = 'html'
+
+    def render(self, data, accepted_media_type=None, renderer_context=None):
+        from django.utils.html import escape
+        body = super().render(data, 'application/json', renderer_context)
+        return (b'<!doctype html><meta charset="utf-8">'
+                b'<title>World Historical Gazetteer</title>'
+                b'<pre style="white-space:pre-wrap;word-break:break-word">'
+                + escape(body.decode('utf-8')).encode('utf-8')
+                + b'</pre>')
+
+
+class EntityResolveAnonThrottle(AnonRateThrottle):
+    """Per-IP ceiling on anonymous identifier resolution.
+
+    The project configures no `DEFAULT_THROTTLE_RATES` — there is no DRF
+    throttle and no nginx `limit_req` anywhere — so the rate is declared here
+    rather than in settings: `SimpleRateThrottle.__init__` honours an explicit
+    `rate` and never consults the scope. Keeping it local also avoids editing
+    `whg/settings.py`, which must never be promoted to `main` wholesale.
+
+    Authenticated callers are unaffected — `AnonRateThrottle` returns None for
+    them, and their existing daily quota continues to apply.
+    """
+    rate = "60/min"
+
+
+def anonymous_resolution_allowed(request, entity_id) -> bool:
+    """True when this request may proceed without authentication."""
+    user = getattr(request, "user", None)
+    if user is not None and user.is_authenticated:
+        return True
+    obj_type, _, obj_id = str(entity_id or "").partition(":")
+    return obj_type == "place" and bool(obj_id) and is_crc_place_id(obj_id)
+
+
+class PublicEntityReadAPIView(AuthenticatedAPIView):
+    """Read-only entity view that anonymous callers may use for authority records.
+
+    Authentication itself is unchanged: a token or session still identifies the
+    caller and still counts against their quota. This only stops an
+    *unauthenticated* GET being rejected outright when the identifier names an
+    authority place.
+    """
+    permission_classes = [AllowAny]
+    throttle_classes = [EntityResolveAnonThrottle]
+    renderer_classes = [JSONRenderer, LinkedDataJSONRenderer, LinkedDataHTMLRenderer]
+
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)
+        if not anonymous_resolution_allowed(request, kwargs.get("entity_id")):
+            raise NotAuthenticated()
+
+
 @method_decorator(csrf_exempt, name='dispatch')
 @entity_schema('detail')
-class EntityDetailView(AuthenticatedAPIView):
+class EntityDetailView(PublicEntityReadAPIView):
     """
     Human-readable detail page for any object type, typically within the main web app.
     /{entity_id}/
     """
+
+    # This view only ever redirects or 404s, but content negotiation still runs
+    # first — and w3id sends browsers here with `Accept: text/html`, which
+    # JSONRenderer alone cannot satisfy. Without an HTML renderer every browser
+    # request 406'd before reaching any of the logic below. StaticHTMLRenderer
+    # suffices here because nothing is ever rendered through it.
+    renderer_classes = [JSONRenderer, LinkedDataJSONRenderer, StaticHTMLRenderer]
 
     def get(self, request, entity_id, *args, **kwargs):
 
@@ -322,7 +488,7 @@ class EntityDetailView(AuthenticatedAPIView):
 
 @method_decorator(csrf_exempt, name='dispatch')
 @entity_schema('feature')
-class EntityFeatureView(AuthenticatedAPIView):
+class EntityFeatureView(PublicEntityReadAPIView):
     """
     Returns a machine-readable LPF or TSV representation.
     /{obj_type}/api/{id}/?filetype=lpf|tsv
@@ -344,7 +510,9 @@ class EntityFeatureView(AuthenticatedAPIView):
 
         # CRC places — fetch from gateway.
         if obj_type == "place" and is_crc_place_id(obj_id):
-            crc_place = _fetch_crc_place(obj_id, user=request.user)
+            crc_place = _fetch_crc_place(
+                obj_id, user=request.user,
+                allow_anonymous=not request.user.is_authenticated)
             if not crc_place:
                 raise Http404(f"CRC place not found: {obj_id}")
             # variant=popup → return the RAW gateway PlaceDetail dict. The Atlas
