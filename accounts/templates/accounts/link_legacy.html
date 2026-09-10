@@ -1,0 +1,38 @@
+{% extends "main/base_webpack.html" %}
+{% block title %}<title>Link an older account | World Historical Gazetteer</title>{% endblock %}
+{% block content %}
+<div class="container py-4" style="max-width: 720px;">
+  <h4>Link an older WHG account</h4>
+  <p class="text-muted">
+    If you used World Historical Gazetteer before signing in with ORCiD, you may have a second,
+    older account. Linking moves its datasets, collections and other work onto this account, and
+    lets you choose which email address to keep.
+  </p>
+
+  {% if messages %}{% for m in messages %}
+    <div class="alert alert-{% if m.tags == 'error' %}danger{% else %}{{ m.tags }}{% endif %} py-2 px-3">{{ m }}</div>
+  {% endfor %}{% endif %}
+
+  <form method="post" class="card card-body" autocomplete="off">
+    {% csrf_token %}
+    <div class="mb-3">
+      <label class="form-label fw-semibold">Your older account</label>
+      <input type="text" name="identifier" class="form-control" required
+             autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false"
+             placeholder="old username or email address">
+      <div class="form-text">Whichever you remember. This is your <em>older</em> account, not the
+        one you are signed in as.</div>
+    </div>
+    <div class="mb-3">
+      <label class="form-label fw-semibold">Old password <span class="text-muted fw-normal">(if you remember it)</span></label>
+      <input type="password" name="password" class="form-control" autocomplete="new-password">
+      <div class="form-text">
+        Leave this blank and we will email a confirmation link to the older account instead —
+        provided its address was verified. If neither works,
+        <a href="/contact_modal/">contact us</a> and we will link it for you.
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary">Continue</button>
+  </form>
+</div>
+{% endblock %}

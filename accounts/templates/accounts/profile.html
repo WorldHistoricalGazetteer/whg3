@@ -122,6 +122,20 @@
         <div class="clippable ps-3" id="whg-username">{{ user.username }}</div>
       </div>
 
+      {% comment %}
+        Recovery for anyone whose pre-ORCiD account became unreachable when they signed in with
+        ORCiD and created a new one. Shown to every ORCiD user rather than only to those we think
+        have a legacy account: naming a candidate would disclose that account's existence to
+        whoever holds the ORCiD, who need not be its owner.
+
+        NB: a hash-brace comment cannot span lines — a multi-line one renders into the page.
+      {% endcomment %}
+      {% if user.orcid %}
+        <div class="small text-muted mb-2">
+          <a href="{% url 'accounts:link_legacy' %}" class="text-muted">Link an older account</a>
+        </div>
+      {% endif %}
+
       {% if user.email %}
         <div class="d-flex mb-2">
           <div class="flex-shrink-0 fw-semibold" style="max-width: 30%;">Email Address</div>
