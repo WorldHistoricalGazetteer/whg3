@@ -1,6 +1,6 @@
 from django.urls import path
 
-from . import views
+from . import views, views_legacy_link
 
 app_name = "accounts"
 
@@ -9,6 +9,10 @@ urlpatterns = [
     path('login/', views.login, name='login'),
     path('logout/', views.logout, name='logout'),
     path('orcid/claim/', views.orcid_claim, name='orcid_claim'),
+    # Recovering a legacy account that ORCiD enforcement locked its owner out of.
+    path('link-legacy/', views_legacy_link.link_legacy, name='link_legacy'),
+    path('link-legacy/confirm/', views_legacy_link.link_legacy_confirm, name='link_legacy_confirm'),
+    path('link-legacy/choose/', views_legacy_link.link_legacy_choose, name='link_legacy_choose'),
     path('orcid-denied-modal/', views.orcid_denied_modal, name='orcid_denied_modal'),
 
     path('profile/api-token/', views.ProfileAPITokenView.as_view(), name='profile-api-token'),

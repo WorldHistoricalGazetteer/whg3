@@ -40,6 +40,11 @@
                         Create a new WHG account linked to your ORCiD iD. We'll pre-fill it from your
                         public ORCiD record &mdash; you can adjust the details afterwards in your profile.
                     </p>
+                    <div class="alert alert-warning py-2 px-3 small">
+                      <strong>Already used WHG before?</strong> Link that account here instead —
+                      once you create a new one, your ORCiD belongs to it and the older account
+                      can no longer be linked without our help.
+                    </div>
                     <form method="post" action="{% url 'accounts:orcid_claim' %}">
                         {% csrf_token %}
                         <input type="hidden" name="action" value="new">

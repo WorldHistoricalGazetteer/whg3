@@ -1,0 +1,25 @@
+{% extends "base_email.html" %}
+
+{% block content %}
+    <p>Someone signed in to World Historical Gazetteer with an ORCiD account
+       (<strong>{{ new_username }}</strong>) and asked to link it to your older account,
+       <strong>{{ legacy_username }}</strong>.</p>
+
+    <p>If that was you, click below to confirm. Your older account's datasets, collections and
+       other work will move across to the ORCiD account, and you will be able to choose which
+       email address the combined account keeps.</p>
+
+    <p>
+      <a href="{{ confirm_url }}" style="display: inline-block; padding: 10px 20px; background-color: #007bff; color: white; text-decoration: none; border-radius: 5px;">
+        Link my older account
+      </a>
+    </p>
+
+    <p>Or copy and paste this link into your browser:</p>
+    <p>{{ confirm_url }}</p>
+
+    <p>This link will expire in 24 hours, and works only for the ORCiD account that requested it.</p>
+
+    <p><strong>If this wasn't you, do nothing.</strong> Your account is unchanged and no one can
+       link it without clicking this link. If you keep receiving these, please tell us.</p>
+{% endblock %}
