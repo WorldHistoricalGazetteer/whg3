@@ -13,17 +13,19 @@
     <div class="alert alert-{% if m.tags == 'error' %}danger{% else %}{{ m.tags }}{% endif %} py-2 px-3">{{ m }}</div>
   {% endfor %}{% endif %}
 
-  <form method="post" class="card card-body">
+  <form method="post" class="card card-body" autocomplete="off">
     {% csrf_token %}
     <div class="mb-3">
       <label class="form-label fw-semibold">Your older account</label>
       <input type="text" name="identifier" class="form-control" required
+             autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false"
              placeholder="old username or email address">
-      <div class="form-text">Whichever you remember.</div>
+      <div class="form-text">Whichever you remember. This is your <em>older</em> account, not the
+        one you are signed in as.</div>
     </div>
     <div class="mb-3">
       <label class="form-label fw-semibold">Old password <span class="text-muted fw-normal">(if you remember it)</span></label>
-      <input type="password" name="password" class="form-control" autocomplete="off">
+      <input type="password" name="password" class="form-control" autocomplete="new-password">
       <div class="form-text">
         Leave this blank and we will email a confirmation link to the older account instead —
         provided its address was verified. If neither works,
