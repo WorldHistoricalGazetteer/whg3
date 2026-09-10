@@ -351,7 +351,14 @@ def profile_edit(request):
                 return render(request, 'accounts/profile.html', context=context)
 
         # Handle resend verification email
-        elif request.POST.get('resend_verification'):
+        # Presence, not truthiness. The template's button is
+        # `<button type="submit" name="resend_verification">` with no `value`, and an HTML
+        # submit button with a name and no value submits the EMPTY STRING. `.get()` therefore
+        # returned '' — falsy — so this branch never ran: the view fell through, re-rendered,
+        # and returned 200 with no email sent and no error shown. Reported 2026-09-10 by a user
+        # who had clicked it repeatedly over two days ("I tried several times ... never received
+        # one"). Testing membership rather than value keeps working whatever the template sends.
+        elif 'resend_verification' in request.POST:
             if request.user.email and not request.user.email_confirmed:
                 signer = Signer()
                 token = signer.sign(request.user.pk)
