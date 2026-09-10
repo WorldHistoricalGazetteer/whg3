@@ -214,7 +214,9 @@ class MergeReviewFindingsTests(TestCase):
         self.orcid.email_confirmed = False
         self.orcid.welcome_email_sent = False
         self.orcid.save()
-        with patch('users.signals.WHGmail') as mail:
+        # The signal imports WHGmail inside the function body, so the patch has to target the
+        # definition site rather than the importing module.
+        with patch('whgmail.messaging.WHGmail') as mail:
             merge_users(self.legacy, self.orcid, keep_email=KEEP_SOURCE_EMAIL)
         self.assertEqual(mail.call_count, 0)
 
