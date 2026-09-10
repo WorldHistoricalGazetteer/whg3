@@ -7,8 +7,9 @@ ORCiD.
 
 PROVING OWNERSHIP. Two routes, per the policy agreed 2026-09-10:
 
-* the old **password** — `ORCID_ENFORCED` disables the login *view*, but `auth.authenticate()` is
-  untouched, so a remembered password is still a valid proof and works for any legacy account;
+* the old **password** — `ORCID_ENFORCED` disables the login *view*, but the stored password hash
+  is untouched, so a remembered password is still a valid proof and works for any legacy account.
+  Checked with `check_password`, never `auth.authenticate()`: see the note at the call site;
 * a one-time link emailed to the legacy account's address, offered **only when that address is
   confirmed** (344 of 1,093 accounts). An address we never verified proves less, and those cases
   go to an administrator instead.
@@ -25,7 +26,7 @@ from __future__ import annotations
 
 import logging
 
-from django.contrib import auth, messages
+from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.core.signing import BadSignature, SignatureExpired, TimestampSigner
@@ -85,8 +86,17 @@ def link_legacy(request):
         legacy = _find_legacy(identifier)
 
         # A password proves ownership outright, whatever the address situation.
+        #
+        # ⚠ NOT `auth.authenticate()`. That walks the whole AUTHENTICATION_BACKENDS chain, and the
+        # last link is `accounts.orcid.OIDCBackend`, which calls `messages.error(...)` when it
+        # cannot authenticate. So a wrong password against a REAL account produced an extra
+        # "ORCiD login failed" message that a wrong password against a NON-EXISTENT account did
+        # not — an account-existence oracle, which is the exact thing this view is built to avoid.
+        # `check_password` touches no backend and emits nothing; `is_active` is checked explicitly
+        # because ModelBackend's own `user_can_authenticate` is not in play, and a retired
+        # (already-merged) account must not be linkable again.
         if password:
-            if legacy and auth.authenticate(request, username=legacy.username, password=password):
+            if legacy and legacy.is_active and legacy.check_password(password):
                 request.session['legacy_link_pk'] = legacy.pk
                 return redirect('accounts:link_legacy_choose')
             # Same message whether the account is absent or the password is wrong.
