@@ -319,6 +319,35 @@ class LinkedDataJSONRenderer(JSONRenderer):
     format = 'jsonld'
 
 
+class LinkedDataHTMLRenderer(JSONRenderer):
+    """Show the same LPF to a browser, as escaped, readable text.
+
+    The detail view 303s a browser on to `/api` (an authority place has no
+    Django detail page), and the browser repeats its original `Accept:
+    text/html` — so without this the HTML arm of a resolved identifier ended
+    at a 406 one redirect after succeeding.
+
+    The body is escaped and wrapped rather than served as raw JSON under a
+    `text/html` content type: gazetteer records carry contributed free text,
+    and a browser told to treat that as HTML would execute any markup in it.
+
+    This is a stopgap, not a landing page. A human resolving an identifier
+    deserves better than a JSON dump; there is currently no id-addressable
+    human page for a gateway-backed authority place to send them to.
+    """
+    media_type = 'text/html'
+    format = 'html'
+
+    def render(self, data, accepted_media_type=None, renderer_context=None):
+        from django.utils.html import escape
+        body = super().render(data, 'application/json', renderer_context)
+        return (b'<!doctype html><meta charset="utf-8">'
+                b'<title>World Historical Gazetteer</title>'
+                b'<pre style="white-space:pre-wrap;word-break:break-word">'
+                + escape(body.decode('utf-8')).encode('utf-8')
+                + b'</pre>')
+
+
 class EntityResolveAnonThrottle(AnonRateThrottle):
     """Per-IP ceiling on anonymous identifier resolution.
 
@@ -353,7 +382,7 @@ class PublicEntityReadAPIView(AuthenticatedAPIView):
     """
     permission_classes = [AllowAny]
     throttle_classes = [EntityResolveAnonThrottle]
-    renderer_classes = [JSONRenderer, LinkedDataJSONRenderer]
+    renderer_classes = [JSONRenderer, LinkedDataJSONRenderer, LinkedDataHTMLRenderer]
 
     def initial(self, request, *args, **kwargs):
         super().initial(request, *args, **kwargs)
@@ -372,7 +401,8 @@ class EntityDetailView(PublicEntityReadAPIView):
     # This view only ever redirects or 404s, but content negotiation still runs
     # first — and w3id sends browsers here with `Accept: text/html`, which
     # JSONRenderer alone cannot satisfy. Without an HTML renderer every browser
-    # request 406'd before reaching any of the logic below.
+    # request 406'd before reaching any of the logic below. StaticHTMLRenderer
+    # suffices here because nothing is ever rendered through it.
     renderer_classes = [JSONRenderer, LinkedDataJSONRenderer, StaticHTMLRenderer]
 
     def get(self, request, entity_id, *args, **kwargs):
