@@ -7,19 +7,24 @@ ORCiD.
 
 PROVING OWNERSHIP. Two routes, per the policy agreed 2026-09-10:
 
-* the old **password** — `ORCID_ENFORCED` disables the login *view*, but the stored password hash
-  is untouched, so a remembered password is still a valid proof and works for any legacy account.
+* the old **password** — `ORCID_ENFORCED` disables the login *view*, but the stored hash is
+  untouched, so a remembered password is still a valid proof and works for any legacy account.
   Checked with `check_password`, never `auth.authenticate()`: see the note at the call site;
 * a one-time link emailed to the legacy account's address, offered **only when that address is
   confirmed** (344 of 1,093 accounts). An address we never verified proves less, and those cases
   go to an administrator instead.
 
+⚠ THIS VIEW REOPENS PASSWORD AUTHENTICATION, WHICH `ORCID_ENFORCED` EXISTS TO RETIRE. That makes
+it the one place in the codebase where an unthrottled guess is possible, against 1,093 accounts
+whose datasets and collections a successful guess would move to the guesser. It is therefore rate
+limited per IP *and* per identifier, and every failed proof is logged. Do not remove either.
+
 ⚠ NO ENUMERATION. Every outcome that depends on whether an account exists returns the SAME
-message. A form that says "no such user" for one input and "check your email" for another is an
-oracle for account discovery, and this page is reachable by anyone who can obtain an ORCiD. The
-same reasoning is why the claim page warns everybody generically instead of naming a candidate
-account: telling a visitor "you may already have an account called X" leaks X to whoever holds
-the ORCiD, which need not be X.
+message — and, as far as we can manage it, in the same time: the not-found path performs a dummy
+password hash, so `check_password`'s work factor is not itself the tell. A form that says "no such
+user" for one input and "check your email" for another is an oracle for account discovery, and
+this page is reachable by anyone who can obtain an ORCiD. The same reasoning is why the claim page
+warns everybody generically instead of naming a candidate account.
 """
 
 from __future__ import annotations
@@ -29,6 +34,7 @@ import logging
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
+from django.core.cache import cache
 from django.core.signing import BadSignature, SignatureExpired, TimestampSigner
 from django.db.models import Q
 from django.shortcuts import redirect, render
@@ -44,10 +50,32 @@ SALT = 'accounts.legacy-link'
 MAX_AGE = 60 * 60 * 24          # the emailed link is good for 24 hours
 SIGNER = TimestampSigner(salt=SALT)
 
+HOUR, DAY = 60 * 60, 60 * 60 * 24
+PW_PER_IP, PW_PER_IP_WINDOW = 10, HOUR            # password guesses from one address
+PW_PER_TARGET, PW_PER_TARGET_WINDOW = 5, HOUR     # …against one legacy account
+MAIL_PER_USER, MAIL_PER_USER_WINDOW = 5, DAY      # link emails one signed-in user may cause
+MAIL_PER_TARGET, MAIL_PER_TARGET_WINDOW = 3, DAY  # …that any one address may receive
+
 # Deliberately identical for "no such account", "that account has an ORCiD already", "its address
-# is unconfirmed" and "we sent you a link". See the enumeration note above.
+# is unconfirmed", "you are being rate limited" and "we sent you a link". See the enumeration note.
 SENT = ("If an older WHG account matches what you entered and we can reach it by email, "
         "we have sent it a link. Check that account's inbox, including its spam folder.")
+NO_MATCH = "That username and password did not match an older account."
+
+
+def _bump(key, window):
+    """Increment a counter under `key`, creating it with `window` seconds to live. Returns it."""
+    k = f'legacy-link:{key}'
+    try:
+        return cache.incr(k)
+    except ValueError:
+        cache.set(k, 1, window)
+        return 1
+
+
+def _client_ip(request):
+    fwd = request.META.get('HTTP_X_FORWARDED_FOR', '')
+    return (fwd.split(',')[0].strip() if fwd else request.META.get('REMOTE_ADDR', '')) or 'unknown'
 
 
 def _find_legacy(identifier):
@@ -55,12 +83,16 @@ def _find_legacy(identifier):
 
     Email is matched through the indexed lookup hash: the column itself is encrypted, so
     `filter(email=…)` never matches anything (see users.models.email_lookup_hash).
+
+    Ordered by pk because neither key is reliably unique — Postgres usernames differ by case, and
+    `email_hash` is indexed but not unique — and a lookup returning a different row on different
+    calls would tell one owner "did not match" for a correct password.
     """
     identifier = (identifier or '').strip()
     if not identifier:
         return None
     legacy = Q(orcid__isnull=True) | Q(orcid='')
-    found = User.objects.filter(legacy, username__iexact=identifier).first()
+    found = User.objects.filter(legacy, username__iexact=identifier).order_by('pk').first()
     if found:
         return found
     try:
@@ -70,7 +102,21 @@ def _find_legacy(identifier):
         return None
     if not h:
         return None
-    return User.objects.filter(legacy, email_hash=h).first()
+    return User.objects.filter(legacy, email_hash=h).order_by('pk').first()
+
+
+def _burn_time_like_a_real_check(password):
+    """Hash a throwaway password so a miss costs roughly what a hit costs.
+
+    `check_password` runs the full PBKDF2 work factor — hundreds of milliseconds — and only when
+    an account was found. Without this the two responses are message-identical and timing-distinct,
+    which is the same oracle over a slower channel. `ModelBackend` does exactly this, for exactly
+    this reason.
+    """
+    try:
+        User().set_password(password)
+    except Exception:                                          # pragma: no cover - defensive
+        pass
 
 
 @login_required
@@ -82,45 +128,73 @@ def link_legacy(request):
 
     if request.method == 'POST':
         identifier = request.POST.get('identifier', '').strip()
-        password = request.POST.get('password', '').strip()
-        legacy = _find_legacy(identifier)
+        # NOT stripped. Django does not strip passwords, and a legacy hash made from one with a
+        # leading or trailing space could never be matched here. A whitespace-only value also used
+        # to collapse to '' and route the user silently down the email path instead.
+        password = request.POST.get('password', '')
+        ip = _client_ip(request)
 
-        # A password proves ownership outright, whatever the address situation.
-        #
-        # ⚠ NOT `auth.authenticate()`. That walks the whole AUTHENTICATION_BACKENDS chain, and the
-        # last link is `accounts.orcid.OIDCBackend`, which calls `messages.error(...)` when it
-        # cannot authenticate. So a wrong password against a REAL account produced an extra
-        # "ORCiD login failed" message that a wrong password against a NON-EXISTENT account did
-        # not — an account-existence oracle, which is the exact thing this view is built to avoid.
-        # `check_password` touches no backend and emits nothing; `is_active` is checked explicitly
-        # because ModelBackend's own `user_can_authenticate` is not in play, and a retired
-        # (already-merged) account must not be linkable again.
         if password:
+            # ⚠ Count the attempt BEFORE looking anything up, and whatever the outcome, so the
+            # limit cannot be mapped by watching which inputs are cheap.
+            over_ip = _bump(f'pw-ip:{ip}', PW_PER_IP_WINDOW) > PW_PER_IP
+            over_id = _bump(f'pw-id:{identifier.lower()}', PW_PER_TARGET_WINDOW) > PW_PER_TARGET
+            if over_ip or over_id:
+                logger.warning("legacy-link: throttled password proof from %s (user=%s)",
+                               ip, request.user.username)
+                messages.error(request, NO_MATCH)
+                return redirect('accounts:link_legacy')
+
+            legacy = _find_legacy(identifier)
+            # NOT `auth.authenticate()`. That walks the whole AUTHENTICATION_BACKENDS chain, and
+            # the last link is `accounts.orcid.OIDCBackend`, which calls `messages.error(...)` when
+            # it cannot authenticate — so a wrong password against a REAL account said one thing
+            # more than against an imaginary one. `check_password` touches no backend and emits
+            # nothing. `is_active` is explicit because ModelBackend's `user_can_authenticate` is
+            # not in play here, and a retired account must not be relinkable.
             if legacy and legacy.is_active and legacy.check_password(password):
                 request.session['legacy_link_pk'] = legacy.pk
+                logger.info("legacy-link: password proof accepted for pk=%s by %s",
+                            legacy.pk, request.user.username)
                 return redirect('accounts:link_legacy_choose')
-            # Same message whether the account is absent or the password is wrong.
-            messages.error(request, "That username and password did not match an older account.")
+
+            if not legacy:
+                _burn_time_like_a_real_check(password)
+            logger.warning("legacy-link: failed password proof from %s (user=%s)",
+                           ip, request.user.username)
+            messages.error(request, NO_MATCH)
             return redirect('accounts:link_legacy')
 
-        # Otherwise offer the email route — but only for an address we once verified.
-        if legacy and legacy.email and legacy.email_confirmed:
-            token = SIGNER.sign(f"{legacy.pk}:{request.user.pk}")
-            url = request.build_absolute_uri(
-                reverse('accounts:link_legacy_confirm') + f'?token={token}')
-            try:
-                WHGmail(request, {
-                    'template': 'legacy_link_verification',
-                    'subject': 'Link your older World Historical Gazetteer account',
-                    'to_email': legacy.email,
-                    'greeting_name': legacy.name or legacy.username,
-                    'confirm_url': url,
-                    'legacy_username': legacy.username,
-                    'new_username': request.user.username,
-                    'user': legacy,
-                })
-            except Exception as e:
-                logger.error("legacy-link email failed for pk=%s: %s", legacy.pk, type(e).__name__)
+        # The email route. Count before deciding anything, for the same reason as above.
+        over_user = _bump(f'mail-user:{request.user.pk}', MAIL_PER_USER_WINDOW) > MAIL_PER_USER
+        legacy = _find_legacy(identifier)
+        if (legacy and legacy.email and legacy.email_confirmed and legacy.is_active
+                and not over_user):
+            # Per-recipient cap as well: without it an ORCiD holder who guesses a legacy username
+            # can mail-bomb that person's inbox with notices naming an attacker-chosen username.
+            if _bump(f'mail-to:{legacy.email_hash}', MAIL_PER_TARGET_WINDOW) <= MAIL_PER_TARGET:
+                token = SIGNER.sign(f"{legacy.pk}:{request.user.pk}")
+                url = request.build_absolute_uri(
+                    reverse('accounts:link_legacy_confirm') + f'?token={token}')
+                try:
+                    WHGmail(request, {
+                        'template': 'legacy_link_verification',
+                        'subject': 'Link your older World Historical Gazetteer account',
+                        'to_email': legacy.email,
+                        'greeting_name': legacy.name or legacy.username,
+                        'confirm_url': url,
+                        'legacy_username': legacy.username,
+                        'new_username': request.user.username,
+                        'user': legacy,
+                        # ⚠ The body carries a LIVE 24-hour token and the recipient's address, and
+                        # WHGmail mirrors to Zulip by default. That would publish both to a chat
+                        # stream — the exact disclosure this module exists to prevent, and enough
+                        # for any reader to complete the link themselves.
+                        'mirror_to_zulip': False,
+                    })
+                except Exception as e:
+                    logger.error("legacy-link email failed for pk=%s: %s",
+                                 legacy.pk, type(e).__name__)
         messages.success(request, SENT)
         return redirect('accounts:link_legacy')
 
@@ -139,8 +213,8 @@ def link_legacy_confirm(request):
         return redirect('accounts:link_legacy')
 
     if target_pk != request.user.pk:
-        # The link was issued to a different account. Say so plainly — this is not an
-        # enumeration risk, because the holder already has the token.
+        # The link was issued to a different account. Say so plainly — not an enumeration risk,
+        # because whoever is reading already holds the token.
         messages.error(request, "That link was issued for a different WHG account. "
                                 "Sign in as that account and try again.")
         return redirect('profile-edit')
