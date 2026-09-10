@@ -44,6 +44,41 @@ def _fetch_crc_place(place_id: str, user=None,
     return result.get(place_id)
 
 
+def _crc_timespans_to_when(timespans_raw) -> dict:
+    """Convert the gateway's ``timespans`` into an LPF ``when``.
+
+    The gateway sends bare integer years — ``[{"start": 1744, "end": 1747}]``,
+    negative for BCE — while LPF wants each bound as an object keyed by the
+    kind of knowledge it represents. These are the extents an authority
+    asserts, not estimates bracketed by uncertainty, so both bounds are ``in``.
+
+    Until 2026-09-10 this was hardcoded to ``{}``, so every authority record
+    resolved through a persistent identifier arrived undated even though the
+    gateway had sent the dates. That matters most for exactly the sources whose
+    content *is* temporal: a Cliopatria polity is one dated extent of a polity
+    that had many, and without ``when`` there is nothing to say which.
+    """
+    timespans = []
+    for span in timespans_raw or []:
+        if not isinstance(span, dict):
+            continue
+        bounds = {}
+        for bound in ("start", "end"):
+            year = span.get(bound)
+            if year is None or isinstance(year, bool):
+                continue
+            if isinstance(year, dict):  # already an LPF bound — pass it through
+                bounds[bound] = year
+                continue
+            try:
+                bounds[bound] = {"in": str(int(year))}
+            except (TypeError, ValueError):
+                continue
+        if bounds:
+            timespans.append(bounds)
+    return {"timespans": timespans} if timespans else {}
+
+
 def _crc_place_to_lpf(crc_place: dict, request=None) -> dict:
     """
     Convert CRC gateway place data to a Linked Places Format (LPF) feature.
@@ -56,6 +91,7 @@ def _crc_place_to_lpf(crc_place: dict, request=None) -> dict:
     types_raw = crc_place.get("types", [])
     geometries = crc_place.get("geometries", [])
     links_raw = crc_place.get("links", [])
+    timespans_raw = crc_place.get("timespans", [])
 
     # Build a proper URI for @id
     if request is not None:
@@ -121,7 +157,7 @@ def _crc_place_to_lpf(crc_place: dict, request=None) -> dict:
         "descriptions": [],
         "depictions": [],
         "relations": [],
-        "when": {},
+        "when": _crc_timespans_to_when(timespans_raw),
     }
 
     if fclasses:

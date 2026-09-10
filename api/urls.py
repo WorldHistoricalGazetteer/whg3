@@ -43,8 +43,15 @@ urlpatterns = [
     # Matches digits separated by dashes.
     re_path(r'^place/(?P<pk_list>\d+(?:-\d+)+)/$', views.PlacesDetailAPIView.as_view(), name='places-detail'),
 
-    # 3. THE SINKHOLE: Catches EVERYTHING else under "place/"
-    # This regex matches "place/" followed by literally anything (.+)
+    # 3. A contributor's OWN identifier: place/<dataset label>/<src_id>/
+    # Must precede the sinkhole below, which would otherwise swallow it — as it
+    # did until 2026-09-10, making this route dead for as long as it has existed.
+    path('place/<str:dslabel>/<str:src_id>/', views.PlaceDetailSourceAPIView.as_view(),
+         name='place-detail-src'),
+
+    # 4. THE SINKHOLE: Catches EVERYTHING else under "place/"
+    # This regex matches "place/" followed by literally anything (.+).
+    # Keep it LAST of the place/ routes: it matches greedily and by design.
     re_path(r'^place/.+/$', views.bad_request_trap, name='place-trap'),
 
     # single place for record comparison in ds_update
@@ -56,8 +63,6 @@ urlpatterns = [
     # places in a collection
     path('placetable_coll/', views.PlaceTableCollViewSet.as_view({'get': 'list'}), name='place-table-coll'),
 
-    # TODO: place/<str:dslabel>/<str:src_id>
-    path('place/<str:dslabel>/<str:src_id>/', views.PlaceDetailSourceAPIView.as_view(), name='place-detail-src'),
 
     # 
     # *** GEOMETRY ***
