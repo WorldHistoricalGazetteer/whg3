@@ -1,0 +1,85 @@
+"""The "Resend Verification Email" button must actually send one.
+
+The template renders it as::
+
+    <button type="submit" name="resend_verification" class="...">
+
+with no ``value``. Per HTML, a submit button with a name and no value submits the **empty
+string** — so ``request.POST.get('resend_verification')`` returned ``''``, which is falsy, and
+the ``elif`` guarding the resend branch never fired. The view fell through to the GET-rendering
+path: HTTP 200, no email, and no error message either. Entirely silent.
+
+Reported 2026-09-10 by a user who had clicked it repeatedly across two days and received
+nothing. His request log is the signature: every ``POST /profile/`` returning 200, never the
+302 the resend branch always produces when it is reached.
+
+These tests post the button exactly as a browser does — ``{'resend_verification': ''}`` — so a
+regression to truthiness-testing fails here rather than in a support ticket.
+"""
+from unittest.mock import patch
+
+from django.contrib.auth import get_user_model
+from django.test import TestCase
+from django.urls import reverse
+
+User = get_user_model()
+
+
+# Creating a user fires the welcome-email signal, which calls WHGmail, which mirrors to Zulip —
+# and `zulip_notification` posts to the REAL chat.whgazetteer.org even under the test runner.
+# Django swaps the email backend to locmem for tests, so no mail escapes, but nothing intercepts
+# the Zulip call. Patch it for the whole class so running these tests does not write to the
+# production notification stream.
+@patch('whgmail.messaging.zulip_notification', return_value=True)
+class ResendVerificationTests(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username='resend-tester',
+            email='someone@example.org',
+            password='x' * 20,
+            given_name='Resend',
+            surname='Tester',
+        )
+        self.user.email_confirmed = False
+        self.user.save()
+        self.client.force_login(self.user)
+
+    def _post(self, data):
+        with patch('accounts.views.WHGmail') as mail:
+            response = self.client.post(reverse('profile-edit'), data)
+        return response, mail
+
+    def test_the_button_as_a_browser_sends_it_triggers_an_email(self, _zulip):
+        """The regression itself: name with no value == empty string."""
+        response, mail = self._post({'resend_verification': ''})
+        self.assertEqual(mail.call_count, 1)
+        self.assertEqual(response.status_code, 302)
+
+    def test_a_value_bearing_button_still_works(self, _zulip):
+        """Guard the guard — the fix must not depend on the value being absent."""
+        _, mail = self._post({'resend_verification': '1'})
+        self.assertEqual(mail.call_count, 1)
+
+    def test_the_email_carries_a_confirmation_url(self, _zulip):
+        _, mail = self._post({'resend_verification': ''})
+        context = mail.call_args[0][1]
+        self.assertEqual(context['template'], 'email_verification')
+        self.assertIn('confirm_url', context)
+        self.assertIn('confirm_email=', context['confirm_url'])
+
+    def test_an_unrelated_post_does_not_send(self, _zulip):
+        """Presence-testing must not fire on every POST to this view."""
+        _, mail = self._post({'something_else': '1'})
+        self.assertEqual(mail.call_count, 0)
+
+    def test_no_email_when_the_address_is_already_confirmed(self, _zulip):
+        self.user.email_confirmed = True
+        self.user.save()
+        _, mail = self._post({'resend_verification': ''})
+        self.assertEqual(mail.call_count, 0)
+
+    def test_no_email_when_the_account_has_no_address(self, _zulip):
+        self.user.email = ''
+        self.user.save()
+        _, mail = self._post({'resend_verification': ''})
+        self.assertEqual(mail.call_count, 0)
