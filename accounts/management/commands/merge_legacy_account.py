@@ -88,8 +88,11 @@ class Command(BaseCommand):
         except Exception as e:
             raise CommandError(f"Could not plan the merge: {e}")
 
-        if not plan['move'] and not plan['drop']:
+        if not plan['move'] and not plan['drop'] and not plan.get('unknown'):
             self.stdout.write("Nothing to move — the legacy account holds no related objects.")
+        for label in plan.get('unknown', []):
+            self.stdout.write(self.style.ERROR(
+                f"  ?????        {label}  (could not inspect — this plan is incomplete)"))
         for label, n in sorted(plan['move'].items()):
             self.stdout.write(f"  move {n:>7,}  {label}")
         for label, n in sorted(plan['drop'].items()):

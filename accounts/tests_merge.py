@@ -15,6 +15,7 @@ from accounts.merge import (
     KEEP_SOURCE_EMAIL, KEEP_TARGET_EMAIL, MergeError, merge_users, plan_merge,
 )
 from api.models import UserAPIProfile
+from django.contrib.auth.models import Group, Permission
 from workbench.models import Team, TeamMember
 
 User = get_user_model()
@@ -151,3 +152,75 @@ class MergeUsersTests(TestCase):
         report = merge_users(self.legacy, self.orcid)
         self.assertEqual(plan['move'].get('workbench.Team'),
                          report['move'].get('workbench.Team'))
+
+
+class MergeReviewFindingsTests(TestCase):
+    """One test per finding from the 2026-09-10 review of merge.py."""
+
+    def setUp(self):
+        patcher = patch('whgmail.messaging.zulip_notification', return_value=True)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        self.legacy = User.objects.create_user(
+            username='oldaccount2', email='old2@example.org', password='x' * 20,
+            given_name='Old', surname='Two')
+        self.legacy.email_confirmed = True
+        self.legacy.save()
+        self.orcid = User.objects.create_user(
+            username='New-Two-0000-0001-2345-0002', email='new2@example.org',
+            password='y' * 20, given_name='New', surname='Two')
+        self.orcid.orcid = '0000-0001-2345-0002'
+        self.orcid.save()
+
+    def test_1_keeping_an_empty_target_address_is_refused(self):
+        """The DEFAULT choice, against an ORCiD account with no address — the worse direction."""
+        self.orcid.email = ''
+        self.orcid.save()
+        with self.assertRaises(MergeError):
+            merge_users(self.legacy, self.orcid, keep_email=KEEP_TARGET_EMAIL)
+        self.legacy.refresh_from_db()
+        self.assertEqual(self.legacy.email, 'old2@example.org')  # nothing wiped
+
+    def test_2_groups_and_privileges_survive_the_merge(self):
+        """An admin who merges must not silently demote themselves."""
+        g = Group.objects.create(name='whg_admins')
+        self.legacy.groups.add(g)
+        self.legacy.is_staff = True
+        self.legacy.role = 'superuser'
+        self.legacy.save()
+        merge_users(self.legacy, self.orcid)
+        self.orcid.refresh_from_db()
+        self.assertTrue(self.orcid.groups.filter(name='whg_admins').exists())
+        self.assertTrue(self.orcid.is_staff)
+        self.assertEqual(self.orcid.role, 'superuser')
+
+    def test_2b_a_lesser_role_does_not_downgrade_the_target(self):
+        self.orcid.role = 'superuser'
+        self.orcid.save()
+        self.legacy.role = 'normal'
+        self.legacy.save()
+        merge_users(self.legacy, self.orcid)
+        self.orcid.refresh_from_db()
+        self.assertEqual(self.orcid.role, 'superuser')
+
+    def test_2c_user_permissions_are_carried(self):
+        perm = Permission.objects.first()
+        self.legacy.user_permissions.add(perm)
+        merge_users(self.legacy, self.orcid)
+        self.assertTrue(self.orcid.user_permissions.filter(pk=perm.pk).exists())
+
+    def test_4_no_welcome_email_for_an_account_that_is_not_new(self):
+        """Adopting a verified address flips email_confirmed, which the signal treats as new."""
+        self.orcid.email_confirmed = False
+        self.orcid.welcome_email_sent = False
+        self.orcid.save()
+        # The signal imports WHGmail inside the function body, so the patch has to target the
+        # definition site rather than the importing module.
+        with patch('whgmail.messaging.WHGmail') as mail:
+            merge_users(self.legacy, self.orcid, keep_email=KEEP_SOURCE_EMAIL)
+        self.assertEqual(mail.call_count, 0)
+
+    def test_6_plan_reports_what_it_could_not_inspect(self):
+        plan = plan_merge(self.legacy, self.orcid)
+        self.assertIn('unknown', plan)
+        self.assertEqual(plan['unknown'], [])
