@@ -30,9 +30,13 @@ User = get_user_model()
 # Django swaps the email backend to locmem for tests, so no mail escapes, but nothing intercepts
 # the Zulip call. Patch it for the whole class so running these tests does not write to the
 # production notification stream.
-@patch('whgmail.messaging.zulip_notification', return_value=True)
 class ResendVerificationTests(TestCase):
     def setUp(self):
+        # A class-level @patch decorates test METHODS, not setUp — creating a user here fires the
+        # welcome-email signal, which mirrors to the REAL Zulip. Start the patcher in setUp.
+        patcher = patch('whgmail.messaging.zulip_notification', return_value=True)
+        patcher.start()
+        self.addCleanup(patcher.stop)
         self.user = User.objects.create_user(
             username='resend-tester',
             email='someone@example.org',
@@ -49,36 +53,36 @@ class ResendVerificationTests(TestCase):
             response = self.client.post(reverse('profile-edit'), data)
         return response, mail
 
-    def test_the_button_as_a_browser_sends_it_triggers_an_email(self, _zulip):
+    def test_the_button_as_a_browser_sends_it_triggers_an_email(self):
         """The regression itself: name with no value == empty string."""
         response, mail = self._post({'resend_verification': ''})
         self.assertEqual(mail.call_count, 1)
         self.assertEqual(response.status_code, 302)
 
-    def test_a_value_bearing_button_still_works(self, _zulip):
+    def test_a_value_bearing_button_still_works(self):
         """Guard the guard — the fix must not depend on the value being absent."""
         _, mail = self._post({'resend_verification': '1'})
         self.assertEqual(mail.call_count, 1)
 
-    def test_the_email_carries_a_confirmation_url(self, _zulip):
+    def test_the_email_carries_a_confirmation_url(self):
         _, mail = self._post({'resend_verification': ''})
         context = mail.call_args[0][1]
         self.assertEqual(context['template'], 'email_verification')
         self.assertIn('confirm_url', context)
         self.assertIn('confirm_email=', context['confirm_url'])
 
-    def test_an_unrelated_post_does_not_send(self, _zulip):
+    def test_an_unrelated_post_does_not_send(self):
         """Presence-testing must not fire on every POST to this view."""
         _, mail = self._post({'something_else': '1'})
         self.assertEqual(mail.call_count, 0)
 
-    def test_no_email_when_the_address_is_already_confirmed(self, _zulip):
+    def test_no_email_when_the_address_is_already_confirmed(self):
         self.user.email_confirmed = True
         self.user.save()
         _, mail = self._post({'resend_verification': ''})
         self.assertEqual(mail.call_count, 0)
 
-    def test_no_email_when_the_account_has_no_address(self, _zulip):
+    def test_no_email_when_the_account_has_no_address(self):
         self.user.email = ''
         self.user.save()
         _, mail = self._post({'resend_verification': ''})
