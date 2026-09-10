@@ -15,6 +15,7 @@ from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.exceptions import NotAuthenticated
 from rest_framework.permissions import AllowAny
+from rest_framework.renderers import JSONRenderer, StaticHTMLRenderer
 from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle
 
@@ -304,6 +305,20 @@ def _place_lookup_id(obj_type, raw_id):
 # anonymously would publish unpublished contributed places and private datasets.
 
 
+class LinkedDataJSONRenderer(JSONRenderer):
+    """Serve the same JSON to clients asking for JSON-LD.
+
+    `DEFAULT_RENDERER_CLASSES` is JSONRenderer alone, which advertises only
+    `application/json`. w3id's content negotiation sends a linked-data client
+    here with `Accept: application/ld+json` — the media type LPF actually is —
+    and DRF answered 406 before authentication was even reached. Declared
+    per-view rather than in settings, so it does not appear as a spurious
+    format option throughout the Swagger UI.
+    """
+    media_type = 'application/ld+json'
+    format = 'jsonld'
+
+
 class EntityResolveAnonThrottle(AnonRateThrottle):
     """Per-IP ceiling on anonymous identifier resolution.
 
@@ -338,6 +353,7 @@ class PublicEntityReadAPIView(AuthenticatedAPIView):
     """
     permission_classes = [AllowAny]
     throttle_classes = [EntityResolveAnonThrottle]
+    renderer_classes = [JSONRenderer, LinkedDataJSONRenderer]
 
     def initial(self, request, *args, **kwargs):
         super().initial(request, *args, **kwargs)
@@ -352,6 +368,12 @@ class EntityDetailView(PublicEntityReadAPIView):
     Human-readable detail page for any object type, typically within the main web app.
     /{entity_id}/
     """
+
+    # This view only ever redirects or 404s, but content negotiation still runs
+    # first — and w3id sends browsers here with `Accept: text/html`, which
+    # JSONRenderer alone cannot satisfy. Without an HTML renderer every browser
+    # request 406'd before reaching any of the logic below.
+    renderer_classes = [JSONRenderer, LinkedDataJSONRenderer, StaticHTMLRenderer]
 
     def get(self, request, entity_id, *args, **kwargs):
 
