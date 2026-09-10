@@ -129,6 +129,11 @@ def merge_users(source, target, *, keep_email=KEEP_TARGET_EMAIL, actor=None):
     if keep_email not in (KEEP_TARGET_EMAIL, KEEP_SOURCE_EMAIL):
         raise MergeError(f"Unknown keep_email: {keep_email!r}")
 
+    if keep_email == KEEP_SOURCE_EMAIL and not source.email:
+        # The password route accepts a legacy account with no address at all, and `User.email` is
+        # nullable. Copying it would leave the SURVIVING account with no address, no email_hash
+        # and email_confirmed False — losing every email route back into the account they kept.
+        raise MergeError("The older account has no email address to keep.")
     chosen_email = source.email if keep_email == KEEP_SOURCE_EMAIL else target.email
     chosen_confirmed = (source.email_confirmed if keep_email == KEEP_SOURCE_EMAIL
                         else target.email_confirmed)

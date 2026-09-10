@@ -33,12 +33,16 @@
         {{ user.email }} <span class="text-muted">(this account{% if user.email_confirmed %}, verified{% else %}, not yet verified{% endif %})</span>
       </label>
     </div>
-    <div class="form-check mb-3">
-      <input class="form-check-input" type="radio" name="keep_email" id="keep-source" value="source">
-      <label class="form-check-label" for="keep-source">
-        {{ legacy.email }} <span class="text-muted">(older account{% if legacy.email_confirmed %}, verified{% endif %})</span>
-      </label>
-    </div>
+    {% if legacy.email %}
+      <div class="form-check mb-3">
+        <input class="form-check-input" type="radio" name="keep_email" id="keep-source" value="source">
+        <label class="form-check-label" for="keep-source">
+          {{ legacy.email }} <span class="text-muted">(older account{% if legacy.email_confirmed %}, verified{% endif %})</span>
+        </label>
+      </div>
+    {% else %}
+      <p class="text-muted small mb-3">The older account has no email address of its own.</p>
+    {% endif %}
     <p class="text-muted small">The older account will be closed and its address released, so
        whichever you choose remains available to you.</p>
     <div>

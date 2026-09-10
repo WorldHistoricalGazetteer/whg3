@@ -11,7 +11,8 @@ from django.core.signing import TimestampSigner
 from django.test import TestCase
 from django.urls import reverse
 
-from accounts.views_legacy_link import SALT
+from accounts.merge import KEEP_SOURCE_EMAIL, MergeError, merge_users
+from accounts.views_legacy_link import PW_PER_TARGET, SALT
 from workbench.models import Team
 
 User = get_user_model()
@@ -22,6 +23,10 @@ class LegacyLinkTests(TestCase):
         patcher = patch('whgmail.messaging.zulip_notification', return_value=True)
         patcher.start()
         self.addCleanup(patcher.stop)
+        # Counters are cache-backed and would leak between tests otherwise.
+        from django.core.cache import cache
+        cache.clear()
+        self.addCleanup(cache.clear)
 
         self.legacy = User.objects.create_user(
             username='oldname', email='old@example.org', password='oldpass-' + 'x' * 12,
@@ -147,3 +152,81 @@ class LegacyLinkTests(TestCase):
         self.me.save()
         r = self.client.get(reverse('accounts:link_legacy'), follow=True)
         self.assertContains(r, 'Sign in with ORCiD')
+
+
+class ReviewFindingsTests(TestCase):
+    """One test per finding from the 2026-09-10 review, so none can regress quietly."""
+
+    def setUp(self):
+        patcher = patch('whgmail.messaging.zulip_notification', return_value=True)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        from django.core.cache import cache
+        cache.clear()
+        self.addCleanup(cache.clear)
+
+        self.legacy = User.objects.create_user(
+            username='oldname', email='old@example.org', password='oldpass-' + 'x' * 12,
+            given_name='Old', surname='Name')
+        self.legacy.email_confirmed = True
+        self.legacy.save()
+        self.me = User.objects.create_user(
+            username='Me-0000-0001-2345-6789', email='new@example.org', password='y' * 20,
+            given_name='Me', surname='Now')
+        self.me.orcid = '0000-0001-2345-6789'
+        self.me.save()
+        self.client.force_login(self.me)
+
+    def test_1_password_guessing_is_throttled(self):
+        """ORCID_ENFORCED retired password auth; this view reopens it and must cap the guesses."""
+        for _ in range(PW_PER_TARGET + 2):
+            self.client.post(reverse('accounts:link_legacy'),
+                             {'identifier': 'oldname', 'password': 'wrong'})
+        # The correct password must now be refused too — the limit is on attempts, not on misses.
+        r = self.client.post(reverse('accounts:link_legacy'),
+                             {'identifier': 'oldname', 'password': 'oldpass-' + 'x' * 12},
+                             follow=True)
+        self.assertNotContains(r, 'Confirm linking')
+
+    def test_2_the_link_email_is_not_mirrored_to_zulip(self):
+        """The body carries a live token and the recipient's address."""
+        with patch('accounts.views_legacy_link.WHGmail') as mail:
+            self.client.post(reverse('accounts:link_legacy'), {'identifier': 'oldname'})
+        self.assertIs(mail.call_args[0][1]['mirror_to_zulip'], False)
+
+    def test_4_an_empty_older_address_cannot_be_adopted(self):
+        """Copying it would strip the surviving account of every email route back in."""
+        self.legacy.email = ''
+        self.legacy.email_confirmed = False
+        self.legacy.save()
+        with self.assertRaises(MergeError):
+            merge_users(self.legacy, self.me, keep_email=KEEP_SOURCE_EMAIL)
+
+    def test_5_link_emails_to_one_address_are_capped(self):
+        with patch('accounts.views_legacy_link.WHGmail') as mail:
+            for _ in range(8):
+                self.client.post(reverse('accounts:link_legacy'), {'identifier': 'oldname'})
+        self.assertLessEqual(mail.call_count, 3)
+
+    def test_7_a_password_is_not_stripped(self):
+        """A hash made from a password with a trailing space must still be matchable."""
+        self.legacy.set_password('has trailing ')
+        self.legacy.save()
+        r = self.client.post(reverse('accounts:link_legacy'),
+                             {'identifier': 'oldname', 'password': 'has trailing '}, follow=True)
+        self.assertContains(r, 'Confirm linking')
+
+    def test_7b_a_whitespace_only_password_is_treated_as_a_password(self):
+        """It used to collapse to '' and route silently to the email path."""
+        with patch('accounts.views_legacy_link.WHGmail') as mail:
+            r = self.client.post(reverse('accounts:link_legacy'),
+                                 {'identifier': 'oldname', 'password': '   '}, follow=True)
+        self.assertEqual(mail.call_count, 0)
+        self.assertContains(r, 'did not match')
+
+    def test_9_a_deactivated_account_is_not_emailed(self):
+        self.legacy.is_active = False
+        self.legacy.save()
+        with patch('accounts.views_legacy_link.WHGmail') as mail:
+            self.client.post(reverse('accounts:link_legacy'), {'identifier': 'oldname'})
+        self.assertEqual(mail.call_count, 0)
