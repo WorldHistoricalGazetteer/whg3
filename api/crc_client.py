@@ -28,20 +28,30 @@ from django.conf import settings
 logger = logging.getLogger("reconciliation")
 
 
-def _is_enabled(user=None) -> bool:
+def _is_enabled(user=None, allow_anonymous: bool = False) -> bool:
     """
     Check whether CRC gateway integration is active.
 
     The gateway is enabled when:
     1. ``CRC_GATEWAY_URL`` is configured in settings (env var or local_settings).
-    2. The user is authenticated.
+    2. The user is authenticated, OR the caller has explicitly opted into
+       anonymous access with ``allow_anonymous``.
 
     This keeps gating purely environment-based: configure the URL on dev
     for testing, leave it unset on production until ready to go live.
+
+    ``allow_anonymous`` exists for ONE caller: persistent-identifier
+    resolution (``api.views_entity``), where a w3id.org 303 delivers a
+    linked-data client carrying no cookie, no token and no CSRF header. It
+    must stay opt-in per call — every other gateway path is authenticated
+    by design, and Atlas itself is still beta-gated.
     """
     gateway_url = getattr(settings, "CRC_GATEWAY_URL", "")
     if not gateway_url:
         return False
+
+    if allow_anonymous:
+        return True
 
     if user is None or not user.is_authenticated:
         return False
@@ -497,7 +507,8 @@ def crc_reconcile_search(normalised_query: dict, user=None, namespaces: set[str]
     return _adapt_hits(data)
 
 
-def crc_fetch_places(place_ids: list[str], user=None) -> dict[str, dict]:
+def crc_fetch_places(place_ids: list[str], user=None,
+                     allow_anonymous: bool = False) -> dict[str, dict]:
     """
     Fetch full place data from the CRC gateway by namespaced IDs.
 
@@ -506,13 +517,15 @@ def crc_fetch_places(place_ids: list[str], user=None) -> dict[str, dict]:
     Args:
         place_ids: List of namespaced CRC place IDs, e.g. ``["gn:745044", "tgn:7010731"]``.
         user: Django User instance.
+        allow_anonymous: Serve the request even when ``user`` is anonymous.
+            Set ONLY by persistent-identifier resolution — see ``_is_enabled``.
 
     Returns:
         Dict mapping each place_id to its data dict (with keys like
         ``title``, ``names``, ``ccodes``, ``geometries``, etc.).
         Missing/errored IDs are omitted.  Returns ``{}`` on any error.
     """
-    if not _is_enabled(user):
+    if not _is_enabled(user, allow_anonymous=allow_anonymous):
         return {}
 
     if not place_ids:

@@ -13,7 +13,10 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import TemplateView
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
+from rest_framework.exceptions import NotAuthenticated
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
+from rest_framework.throttling import AnonRateThrottle
 
 from api.authentication import AuthenticatedAPIView
 from api.crc_client import crc_fetch_places
@@ -27,9 +30,16 @@ from api.schemas import entity_schema, TYPE_MAP
 logger = logging.getLogger('reconciliation')
 
 
-def _fetch_crc_place(place_id: str, user=None) -> dict | None:
-    """Fetch a single CRC place from the gateway, or return None."""
-    result = crc_fetch_places([place_id], user=user)
+def _fetch_crc_place(place_id: str, user=None,
+                     allow_anonymous: bool = False) -> dict | None:
+    """Fetch a single CRC place from the gateway, or return None.
+
+    ``allow_anonymous`` is passed through to ``crc_client._is_enabled``, which
+    otherwise refuses an unauthenticated caller outright. Set it only for
+    persistent-identifier resolution — see ``PublicEntityReadAPIView``.
+    """
+    result = crc_fetch_places([place_id], user=user,
+                              allow_anonymous=allow_anonymous)
     return result.get(place_id)
 
 
@@ -267,9 +277,77 @@ def _place_lookup_id(obj_type, raw_id):
     return pk if pk is not None else raw_id
 
 
+# ---------------------------------------------------------------------------
+# Persistent-identifier resolution
+# ---------------------------------------------------------------------------
+#
+# WHG identifiers are published through w3id.org, which 303-redirects here:
+#
+#   whg:place:clio:<id>
+#     -> https://w3id.org/whg/id/place:clio:<id>
+#     -> /entity/place:clio:<id>/      (Accept: text/html)
+#     -> /entity/place:clio:<id>/api   (Accept: application/ld+json)
+#
+# A client following that chain arrives with no cookie, no API token and no
+# CSRF header, so `IsAuthenticated` made every published identifier answer 401.
+# An identifier that requires an API key is not a persistent identifier.
+#
+# Anonymous access is opened for exactly one case: a place id belonging to an
+# AUTHORITY gazetteer (`clio:`, `gn:`, `tgn:`, …), served from the CRC gateway
+# and already public reference data.
+#
+# It is NOT opened for anything else, and the reason is specific rather than
+# merely cautious: the Postgres-backed querysets behind the other types are not
+# owner-scoped. `api/querysets.py::place_feature_queryset` returns
+# `Place.objects` unfiltered, and `api/schemas.py::TYPE_MAP` defines no
+# `feature_queryset` at all for `dataset` or `collection` — so serving those
+# anonymously would publish unpublished contributed places and private datasets.
+
+
+class EntityResolveAnonThrottle(AnonRateThrottle):
+    """Per-IP ceiling on anonymous identifier resolution.
+
+    The project configures no `DEFAULT_THROTTLE_RATES` — there is no DRF
+    throttle and no nginx `limit_req` anywhere — so the rate is declared here
+    rather than in settings: `SimpleRateThrottle.__init__` honours an explicit
+    `rate` and never consults the scope. Keeping it local also avoids editing
+    `whg/settings.py`, which must never be promoted to `main` wholesale.
+
+    Authenticated callers are unaffected — `AnonRateThrottle` returns None for
+    them, and their existing daily quota continues to apply.
+    """
+    rate = "60/min"
+
+
+def anonymous_resolution_allowed(request, entity_id) -> bool:
+    """True when this request may proceed without authentication."""
+    user = getattr(request, "user", None)
+    if user is not None and user.is_authenticated:
+        return True
+    obj_type, _, obj_id = str(entity_id or "").partition(":")
+    return obj_type == "place" and bool(obj_id) and is_crc_place_id(obj_id)
+
+
+class PublicEntityReadAPIView(AuthenticatedAPIView):
+    """Read-only entity view that anonymous callers may use for authority records.
+
+    Authentication itself is unchanged: a token or session still identifies the
+    caller and still counts against their quota. This only stops an
+    *unauthenticated* GET being rejected outright when the identifier names an
+    authority place.
+    """
+    permission_classes = [AllowAny]
+    throttle_classes = [EntityResolveAnonThrottle]
+
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)
+        if not anonymous_resolution_allowed(request, kwargs.get("entity_id")):
+            raise NotAuthenticated()
+
+
 @method_decorator(csrf_exempt, name='dispatch')
 @entity_schema('detail')
-class EntityDetailView(AuthenticatedAPIView):
+class EntityDetailView(PublicEntityReadAPIView):
     """
     Human-readable detail page for any object type, typically within the main web app.
     /{entity_id}/
@@ -322,7 +400,7 @@ class EntityDetailView(AuthenticatedAPIView):
 
 @method_decorator(csrf_exempt, name='dispatch')
 @entity_schema('feature')
-class EntityFeatureView(AuthenticatedAPIView):
+class EntityFeatureView(PublicEntityReadAPIView):
     """
     Returns a machine-readable LPF or TSV representation.
     /{obj_type}/api/{id}/?filetype=lpf|tsv
@@ -344,7 +422,9 @@ class EntityFeatureView(AuthenticatedAPIView):
 
         # CRC places — fetch from gateway.
         if obj_type == "place" and is_crc_place_id(obj_id):
-            crc_place = _fetch_crc_place(obj_id, user=request.user)
+            crc_place = _fetch_crc_place(
+                obj_id, user=request.user,
+                allow_anonymous=not request.user.is_authenticated)
             if not crc_place:
                 raise Http404(f"CRC place not found: {obj_id}")
             # variant=popup → return the RAW gateway PlaceDetail dict. The Atlas
