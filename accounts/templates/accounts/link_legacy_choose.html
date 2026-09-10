@@ -12,8 +12,15 @@
       <ul class="mb-1">
         {% for label, n in plan.move.items %}<li>{{ n }} × {{ label }}</li>{% endfor %}
       </ul>
-    {% else %}
+    {% elif not plan.unknown %}
       <p class="mb-1 text-muted">Nothing — the older account holds no data.</p>
+    {% endif %}
+    {% if plan.unknown %}
+      <div class="alert alert-warning py-2 px-3 mt-2 mb-0">
+        We could not check {{ plan.unknown|length }} kind{{ plan.unknown|length|pluralize }} of
+        record, so this list may be incomplete. Nothing will be lost — anything found is moved —
+        but please tell us if something seems missing afterwards.
+      </div>
     {% endif %}
     {% if plan.drop %}
       <div class="alert alert-warning py-2 px-3 mt-2 mb-0">
