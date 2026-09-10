@@ -146,7 +146,10 @@ def link_legacy_choose(request):
     if not legacy_pk:
         return redirect('accounts:link_legacy')
     legacy = User.objects.filter(pk=legacy_pk).first()
-    if not legacy or getattr(legacy, 'orcid', None):
+    # `is_active` False means it has already been merged and retired. Without this a replayed
+    # emailed link would "merge" it a second time — moving nothing, but happily setting this
+    # account's address to the empty string the retirement left behind.
+    if not legacy or getattr(legacy, 'orcid', None) or not legacy.is_active:
         request.session.pop('legacy_link_pk', None)
         messages.error(request, "That account can no longer be linked.")
         return redirect('accounts:link_legacy')
@@ -171,5 +174,4 @@ def link_legacy_choose(request):
     return render(request, 'accounts/link_legacy_choose.html', {
         'legacy': legacy,
         'plan': plan_merge(legacy, request.user),
-        'moved_total': sum(plan_merge(legacy, request.user)['move'].values()),
     })

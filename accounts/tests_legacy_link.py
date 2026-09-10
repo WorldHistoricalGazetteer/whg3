@@ -124,6 +124,20 @@ class LegacyLinkTests(TestCase):
         self.assertEqual(self.legacy.email, '')
         self.assertContains(r, 'has been linked')
 
+    def test_a_replayed_token_cannot_merge_a_retired_account_twice(self):
+        """The retirement empties the old address; a second merge would copy that emptiness."""
+        self.client.post(reverse('accounts:link_legacy'),
+                         {'identifier': 'oldname', 'password': 'oldpass-' + 'x' * 12})
+        self.client.post(reverse('accounts:link_legacy_choose'), {'keep_email': 'source'})
+        self.me.refresh_from_db()
+        self.assertEqual(self.me.email, 'old@example.org')
+
+        r = self.client.get(reverse('accounts:link_legacy_confirm'),
+                            {'token': self._token()}, follow=True)
+        self.assertContains(r, 'can no longer be linked')
+        self.me.refresh_from_db()
+        self.assertEqual(self.me.email, 'old@example.org')
+
     def test_the_choice_screen_needs_a_proof_first(self):
         r = self.client.get(reverse('accounts:link_legacy_choose'), follow=True)
         self.assertContains(r, 'Link an older WHG account')
