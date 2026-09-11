@@ -682,11 +682,15 @@ export function formatYearWindow(from, to) {
 // the wrong URL shape) wherever a place is shown publicly.
 //
 // NOTE for anyone reading this next to the issue: for a WHG-hosted (contributed)
-// place, that URI resolves anonymously only as far as the HTML view. The `/api`
-// representation still requires authentication — `anonymous_resolution_allowed()`
-// in api/views_entity.py opens unauthenticated access to AUTHORITY place ids
-// (`gn:`, `clio:`, …) only, and a WHG pid is a bare integer. Displaying the URI
-// is therefore necessary but not sufficient for the EDOPS use case.
+// place this URI does NOT resolve anonymously at all — measured 2026-09-11 on dev,
+// `/entity/place:8187126/` returns 401 for both `Accept: text/html` and
+// `application/ld+json`, as does `/api`. `anonymous_resolution_allowed()` in
+// api/views_entity.py opens unauthenticated access to AUTHORITY place ids
+// (`gn:`, `clio:`, …) only, and a WHG pid is a bare integer. Displaying the
+// identifier is therefore necessary but NOT sufficient for the EDOPS use case:
+// it is correct and citable, but an anonymous client following it gets 401.
+// Opening that up is a separate decision — the Postgres-backed querysets behind
+// these ids are not owner-scoped, so it cannot simply be widened.
 
 export function placeUri(pid) {
 	return `${window.location.origin}/entity/place:${pid}/`;
